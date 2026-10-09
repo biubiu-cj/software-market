@@ -44,11 +44,12 @@ CREATE TABLE IF NOT EXISTS oauth2_record (
     UNIQUE KEY uk_user_app (user_id, app_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='OAuth2 authorization records';
 
--- Seed test application
+-- Seed test application.
+-- 注意：app_secret 仅为本地联调的占位值，正式环境请替换为随机生成的强密钥。
 INSERT IGNORE INTO oauth2_app (app_id, app_secret, app_name, app_icon, description, redirect_uri)
 VALUES (
     'test-app-001',
-    'test-secret-123',
+    'CHANGE_ME_dev_only_secret',
     'Test OAuth2 App',
     'https://img.icons8.com/color/48/test.png',
     'A test application for OAuth2 integration.',
