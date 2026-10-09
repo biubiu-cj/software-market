@@ -1,0 +1,52 @@
+# ---- Maven 构建产物 ----
+target/
+*.class
+
+# ---- IDE / 编辑器 ----
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.suo
+
+# ---- 运行时上传数据（头像等）----
+upload/
+
+# ---- 日志 ----
+logs/
+*.log
+
+# ---- 操作系统 ----
+.DS_Store
+Thumbs.db
+
+# ---- 前端（fronted/newSSE/.gitignore 已覆盖，此处为兜底）----
+fronted/newSSE/node_modules/
+fronted/newSSE/dist/
+# 本项目统一使用 pnpm，忽略 npm/yarn 锁文件
+package-lock.json
+yarn.lock
+
+# ---- 环境变量与敏感配置 ----
+.env
+.env.*
+!.env.example
+
+# ---- Spring 本地/生产配置（含真实密钥，仓库只保留 .example 模板）----
+application-local.yml
+application-local.yaml
+application-local.properties
+application-prod.yml
+application-prod.yaml
+application-prod.properties
+!application-local.yml.example
+!application-prod.yml.example
+
+# ---- 前端包管理器 debug 日志（fronted/newSSE/.gitignore 已覆盖，此处兜底）----
+fronted/newSSE/npm-debug.log*
+fronted/newSSE/yarn-debug.log*
+fronted/newSSE/pnpm-debug.log*
+
+# ---- Claude Code 本地设置 ----
+.claude/settings.local.json

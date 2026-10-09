@@ -1,0 +1,278 @@
+/* 从网络获取会阻塞2-3s */
+@import url('./font.css');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-bg);
+  /* overflow: hidden; */
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+
+@media screen and (min-width: 768px) {
+  /* 调整body的滚动条 */
+  body::-webkit-scrollbar {
+    width: 4px;
+    background-color: var(--color-scroll);
+  }
+
+  body::-webkit-scrollbar-thumb {
+    background-color: var(--color-scroll-thumb);
+  }
+}
+
+.fileInput,
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  pointer-events: auto;
+  border: none;
+  outline: none;
+  background-color: var(--color-button-bg);
+  color: var(--color-button);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  font-family: var(--font-sans);
+}
+
+.fileInput:hover,
+button:hover {
+  background-color: var(--color-button);
+  color: var(--color-button-bg);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  object-fit: cover;
+  vertical-align: middle;
+}
+
+@media screen and (max-width: 768px) {
+  .fileInput,
+  button {
+    margin-left: 1%;
+    margin-right: 1%;
+  }
+
+  .editorButton {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.root {
+  color: var(--color-text);
+}
+
+a {
+  text-decoration: none;
+  color: var(--color-link);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+a:hover {
+  color: var(--color-link-hover);
+  background: transparent;
+}
+
+a:active {
+  opacity: 0.92;
+}
+
+/* 页面内容区：居中宽度与标题样式 */
+.page-section {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: clamp(0.75rem, 3vw, 1.5rem);
+  padding-bottom: 0.5rem;
+}
+
+.page-heading {
+  font-size: clamp(1.125rem, 2.5vw, 1.375rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  margin: 0 0 1rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* 主按钮：与认证/表单统一 */
+.btn-primary {
+  display: flex;
+  width: 100%;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.25rem;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  color: var(--accent-foreground) !important;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  filter: grayscale(0.2);
+}
+
+.btn-secondary {
+  display: flex;
+  width: 100%;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  color: var(--color-text) !important;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-xs);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--accent-muted);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auth-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.35rem 0 1rem;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.auth-check {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.auth-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.auth-links a {
+  font-weight: 600;
+}
+
+/* WeChat Login */
+.wechat-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.wechat-divider__line {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.wechat-divider__text {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.wechat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid #07c160;
+  border-radius: var(--radius-lg);
+  background: #07c160;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wechat-btn:hover {
+  background: #06ad56;
+  border-color: #06ad56;
+  box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3);
+}
+
+.wechat-btn__icon {
+  flex-shrink: 0;
+}

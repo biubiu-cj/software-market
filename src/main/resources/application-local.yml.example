@@ -1,0 +1,11 @@
+# 本地开发配置模板。
+# 用法：复制为 application-local.yml 并填入真实值（application-local.yml 已被 .gitignore 忽略）。
+# 默认激活 local profile（见 application.yml），因此本文件会自动加载。
+spring:
+  datasource:
+    password: your_mysql_password
+  mail:
+    username: your_qq_email@qq.com
+    password: your_qq_smtp_auth_code
+jwt:
+  secret: your_base64_encoded_jwt_secret

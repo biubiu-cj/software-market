@@ -1,0 +1,129 @@
+#msgbox-root {
+  width: 20%;
+  height: 30%;
+  position: fixed;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #000;
+  background-color: rgba(174, 174, 174, 0.5);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  z-index: 1005;
+  animation:
+    fade-out 6s forwards,
+    move-down 6s forwards !important;
+  pointer-events: none;
+}
+
+@media screen and (max-width: 768px) {
+  #msgbox-root {
+    width: 100%;
+    height: 20%;
+    top: 80%;
+    left: 50%;
+    transform: translateX(-50%);
+    animation:
+      fade-out 6s forwards,
+      move-up 6s forwards;
+  }
+}
+
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes move-up {
+  from {
+    top: 80%;
+  }
+  to {
+    top: 50%;
+  }
+}
+
+@keyframes move-down {
+  from {
+    top: 0;
+  }
+  to {
+    top: 30%;
+  }
+}
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fade-in 0.15s ease;
+}
+
+.confirm-card {
+  background: var(--surface-1, #fff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-xl, 16px);
+  padding: 1.5rem 1.75rem;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.confirm-msg {
+  margin: 0 0 1.25rem;
+  font-size: 0.95rem;
+  color: var(--color-text, #1e293b);
+  line-height: 1.55;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.confirm-btn {
+  padding: 0.5em 1.2em;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-family: var(--font-sans);
+  transition: background-color 0.15s;
+}
+
+.confirm-btn--cancel {
+  background: var(--color-hover, #f1f5f9);
+  color: var(--shop-text-secondary, #64748b);
+}
+
+.confirm-btn--cancel:hover {
+  background: var(--color-border, #e2e8f0);
+}
+
+.confirm-btn--ok {
+  background: var(--accent, #0d9488);
+  color: #fff;
+}
+
+.confirm-btn--ok:hover {
+  background: #0f766e;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

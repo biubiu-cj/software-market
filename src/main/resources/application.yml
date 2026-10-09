@@ -1,0 +1,94 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: software-market
+
+  # 本地开发默认激活 local，自动加载 application-local.yml（内含真实密钥，已被 .gitignore 忽略）。
+  # 服务器上通过环境变量覆盖：SPRING_PROFILES_ACTIVE=prod
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
+  datasource:
+    url: ${MYSQL_URL:jdbc:mysql://localhost:3306/software_market?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 4
+          max-wait: 3000ms
+
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          starttls:
+            enable: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: 1
+      retries: 3
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: software-market
+      auto-offset-reset: earliest
+      properties:
+        spring.json.trusted.packages: "software_market.event"
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+app:
+  # 上传文件根目录。本地开发用相对路径（相对启动目录）；
+  # 服务器上请改绝对路径并确保运行用户有写权限，例如 /opt/software-market/upload
+  upload-dir: ${UPLOAD_DIR:./upload}
+
+mybatis-plus:
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: software_market.entity
+
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    software_market: debug
+
+jwt:
+  secret: ${JWT_SECRET:}
+  access-token-expire: 7d
+  refresh-token-expire: 30d
+  oauth2-access-token-expire: 1h
+
+wechat:
+  appid: ${WECHAT_APPID:your_wechat_appid}
+  secret: ${WECHAT_SECRET:your_wechat_appsecret}
+  redirect-uri: ${WECHAT_REDIRECT_URI:http://localhost:8080/api/auth/wechat/callback}
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
