@@ -3,12 +3,12 @@ package software_market.webSocket;
 import jakarta.websocket.*;
 import jakarta.websocket.server.ServerEndpoint;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import software_market.config.security.JwtProvider;
 import software_market.dto.request.chat.ChatMessageDTO;
 import software_market.entity.ChatMsg;
 import software_market.service.ChatService;
-import software_market.utils.SpringContextUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 
@@ -28,8 +28,16 @@ public class ChatWebSocket {
     private static final ConcurrentHashMap<Integer, Set<Session>> SESSION_MAP = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Session, Integer> USER_MAP = new ConcurrentHashMap<>();
 
-    private final JwtProvider jwtProvider = SpringContextUtil.getBean(JwtProvider.class);
-    private final ChatService chatService = SpringContextUtil.getBean(ChatService.class);
+    // @ServerEndpoint 实例由 WebSocket 容器按连接创建（非 Spring 管理），
+    // 因此不能通过实例字段 @Autowired；由 Spring 管理的单例把依赖写入静态字段供连接实例读取。
+    private static JwtProvider jwtProvider;
+    private static ChatService chatService;
+
+    @Autowired
+    public void setBeanDependencies(JwtProvider jwtProvider, ChatService chatService) {
+        ChatWebSocket.jwtProvider = jwtProvider;
+        ChatWebSocket.chatService = chatService;
+    }
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
