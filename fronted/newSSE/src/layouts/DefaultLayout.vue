@@ -182,12 +182,15 @@ watch(() => newPostsNotification.updatedAt, (updatedAt: number) => {
   <div class="root w-full" :class="{ 'pwa-mode': isDesktopExperience }">
     <header>
       <div class="site-top">
-        <div class="top-left" />
-        <RouterLink class="title" to="/">
-          SSE MARKET
-        </RouterLink>
-        <div class="top-right">
-          <ModeButton />
+        <div class="site-top-inner">
+          <div class="top-left" />
+          <RouterLink class="title" to="/">
+            <span class="brand-mark" aria-hidden="true">S</span>
+            <span class="brand-text">SSE MARKET</span>
+          </RouterLink>
+          <div class="top-right">
+            <ModeButton />
+          </div>
         </div>
       </div>
       <template v-if="isPC">
@@ -229,38 +232,86 @@ header {
 }
 
 .site-top {
+  background: var(--header-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--header-border);
+}
+
+.site-top-inner {
   display: flex;
   align-items: center;
-  background: linear-gradient(120deg, #0f172a 0%, #134e4a 55%, #0d9488 100%);
-  border-bottom: 1px solid var(--header-border);
-  box-shadow: var(--shadow-sm);
+  justify-content: space-between;
+  gap: 0.5rem;
+  max-width: 74rem;
+  min-height: 2.75rem;
+  margin-inline: auto;
+  padding-inline: clamp(0.75rem, 3vw, 1.5rem);
+}
 
-  .title {
-    flex: 1;
-    color: #f8fafc;
-    text-align: center;
-    margin: 0.35em 0.5em;
-    letter-spacing: 0.22em;
-    font-size: clamp(15px, 2.5vw, 17px);
-    font-family: var(--font-sans);
-    font-weight: 700;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.25rem;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
 
+.title:hover {
+  color: var(--accent);
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 7px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.top-left,
+.top-right {
+  display: flex;
+  align-items: center;
+}
+
+@media screen and (max-width: 767px) {
   .top-left,
   .top-right {
-    width: 0;
-    display: flex;
-    align-items: center;
-    justify-content: end;
-    padding: 0 0.8rem;
+    flex: 1;
+  }
+
+  .top-right {
+    justify-content: flex-end;
+  }
+
+  .title {
+    justify-content: center;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .top-left {
+    display: none;
   }
 }
 
 .content {
   width: 100%;
-  padding-bottom: 80px;
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -269,11 +320,10 @@ header {
     width 0.3s ease;
 }
 
-/* 大屏幕样式 >768px */
+/* 大屏幕样式 >768px：底部导航不显示，只留出到页面底部的呼吸空间 */
 @media screen and (min-width: 768px) {
   .content {
-    padding-left: 5%;
-    padding-right: 5%;
+    padding-bottom: 2.5rem;
   }
 }
 

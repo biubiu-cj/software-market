@@ -94,15 +94,14 @@ function useCustomEvent(type: 'delete' | 'save' | 'like') {
     <div class="extension-slot">
       <slot name="right-extension" />
     </div>
-    <RouterLink :to="`/postdetail/${post.PostID}`">
-      <div
-        class="mt-1"
-      >
-        <h3>
+    <RouterLink :to="`/postdetail/${post.PostID}`" class="post-link">
+      <div class="post-title-row">
+        <h3 class="post-title">
           {{ post.Title || '' }}
         </h3>
+        <span v-if="isNew" class="new-chip">新</span>
       </div>
-      <p v-show="!isDense">
+      <p v-show="!isDense" class="no-indent post-summary">
         {{ post.Content.slice(0, 15) || 'loading' }}
       </p>
       <template v-if="post.Photos">
@@ -126,45 +125,71 @@ function useCustomEvent(type: 'delete' | 'save' | 'like') {
 </template>
 
 <style scoped>
-p::after {
+.post-link {
+  display: block;
+  color: var(--color-text);
+}
+
+.post-link:hover {
+  color: var(--color-text);
+}
+
+.post-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.post-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.new-chip {
+  flex-shrink: 0;
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  background: var(--accent-muted);
+  color: var(--color-link);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.post-summary {
+  margin: 0.45rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.post-summary::after {
   content: '...';
 }
 
-a {
-  display: block;
-}
-
-/* 新帖子 */
-.new-post {
-  position: relative;
-  border-left: 4px solid var(--color-info) !important;
-}
-
-.new-post::before {
-  content: 'NEW';
-  position: absolute;
-  top: 6px;
-  left: 50%;
-  transform: translate(-50%, 0);
-  background: var(--color-info);
-  color: var(--color-bg);
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 10px;
-  z-index: 10;
-  opacity: 0.8;
+/* 新帖子：左侧主色描边 + 轻微底色 */
+.card-root.new-post {
+  border-left: 3px solid var(--accent);
+  background: linear-gradient(to right, var(--accent-muted), transparent 4.5rem), var(--surface-1);
 }
 
 /* 扩展插槽定位 */
 .extension-slot {
   position: relative;
-}
-
-@media screen and (min-width: 768px) {
-  .card-root:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-    border-color: rgba(13, 148, 136, 0.25);
-  }
 }
 </style>

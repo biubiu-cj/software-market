@@ -34,222 +34,152 @@ const shopSidebarIsShow = computed(() => {
 
 <template>
   <div v-if="!shopSidebarIsShow" class="site-header">
-    <RouterLink
-      to="/course"
-      class="lesson"
-      style="
-              background-image: url(https://img.icons8.com/?size=100&id=kmUrp7YjifpP&format=png&color=000000);
-            "
-    />
-    <form class="search" @submit.prevent="search">
-      <input
-        id="sinfo"
-        ref="sinfo"
-        name="sinfo"
-        placeholder="搜索..."
+    <div class="header-inner">
+      <RouterLink
+        to="/course"
+        class="header-icon-link"
+        title="课程专区"
+        aria-label="课程专区"
       >
-      <button type="submit">
-        <div
-          class="icon"
-          style="
-                  background-image: url(https://img.icons8.com/?size=100&id=131&format=png&color=000000);
-                  background-size: 75% 75%;
-                  background-position: 0px 0px;
-                "
-        />
-      </button>
-    </form>
-    <router-link
-      to="/post"
-      class="icon bright-icon post-button"
-      style="
-              width: 30px;
-              height: 30px;
-              background-position: 1px -1px;
-              background-image: url(/webp/sendPostButton.webp)
-            "
-    />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+        </svg>
+      </RouterLink>
+      <form class="search" role="search" @submit.prevent="search">
+        <input
+          id="sinfo"
+          ref="sinfo"
+          name="sinfo"
+          type="search"
+          placeholder="搜索帖子…"
+          aria-label="搜索帖子"
+        >
+        <button type="submit" aria-label="搜索" title="搜索">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
+      </form>
+      <router-link
+        to="/post"
+        class="header-icon-link post-link"
+        title="发帖"
+        aria-label="发帖"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        </svg>
+      </router-link>
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .site-header {
-  display: flex;
+  height: 100%;
   background: var(--header-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: var(--color-text);
-  align-items: center;
-  padding: 0 1em;
   border-bottom: 1px solid var(--header-border);
   box-shadow: var(--shadow-xs);
-  transition:
-    box-shadow 0.3s ease,
-    height 0.3s ease;
-  margin-bottom: 0;
   overflow: hidden;
-
-  .links {
-    a {
-      position: relative;
-      display: inline-block;
-      padding: 0.35em 0.55em;
-      border-radius: var(--radius-sm);
-      margin-right: 0.15em;
-      text-decoration: none;
-      transition:
-        background-color 0.2s ease,
-        color 0.2s ease;
-    }
-
-    a:hover,
-    .router-link-active {
-      background: var(--accent-muted);
-      color: var(--accent) !important;
-    }
-
-    a:link,
-    a:visited {
-      color: var(--color-text);
-    }
-
-    .notice-num {
-      position: absolute;
-      top: -4px;
-      right: -3px;
-      border-radius: 9px;
-      background: #ff5050;
-      color: #eee;
-      height: 1rem;
-      text-align: center;
-      line-height: 1;
-      font-size: 13px;
-      padding: 2px 4px;
-    }
-  }
-
-  .search {
-    flex: 1;
-    margin: 0 1em;
-    text-align: center;
-
-    input {
-      width: 100%;
-      max-width: 48em;
-      height: 2.25em;
-      padding: 0 2.25em 0 0.85em;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-full);
-      line-height: 1.2;
-      vertical-align: middle;
-      background: var(--surface-2);
-      color: var(--color-text);
-      transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
-    }
-
-    input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-muted);
-    }
-
-    button {
-      background: unset;
-      height: 1em;
-      width: 1em;
-      padding: 0;
-      margin: 0 0 0 -1.5em;
-      vertical-align: middle;
-    }
-  }
+  transition: height 0.3s ease;
 }
-.dark-mode .site-header {
-  background: var(--header-bg);
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 100%;
+  padding-inline: 0.6rem;
+}
+
+.header-icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
   color: var(--color-text);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
 
-  .links {
-    a:hover,
-    .router-link-active {
-      background: var(--accent-muted);
-      color: var(--color-link) !important;
-    }
+.header-icon-link:hover,
+.header-icon-link.router-link-active {
+  background: var(--accent-muted);
+  color: var(--accent);
+}
 
-    a:link,
-    a:visited {
-      color: var(--color-text);
-    }
+.header-icon-link svg {
+  width: 22px;
+  height: 22px;
+}
 
-    .notice-num {
-      background: #ff5050;
-    }
+.post-link {
+  color: var(--accent);
+}
+
+.search {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+
+  input {
+    width: 100%;
+    height: 2.4rem;
+    padding: 0 2.4rem 0 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    background: var(--surface-2);
+    color: var(--color-text);
+    font-size: 0.9rem;
+    font-family: var(--font-sans);
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
   }
 
-  .search {
-    height: auto;
-
-    input {
-      background: var(--surface-2);
-      border: 1px solid var(--color-border);
-      color: var(--color-text);
-    }
-
-    input::placeholder {
-      color: var(--shop-text-muted);
-    }
-    button {
-      overflow: hidden;
-    }
+  input::placeholder {
+    color: var(--color-text-secondary);
   }
-}
 
-.icon {
-  width: 20px;
-  height: 20px;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-size: contain;
-  background-position: 0px 3px;
-  display: inline-block;
-}
+  input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--surface-1);
+    box-shadow: 0 0 0 3px var(--accent-muted);
+  }
 
-body.dark-mode .icon {
-  filter: invert(1);
-}
+  button {
+    position: absolute;
+    top: 50%;
+    right: 3px;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    margin: 0;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text-secondary);
+  }
 
-/* 课程专区（暂时） */
-.lesson {
-  width: 30px;
-  height: 30px;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-size: contain;
-  background-position: 0px 3px;
-  display: inline-block;
-}
-
-body.dark-mode .lesson {
-  filter: brightness(1.1) saturate(1.2) drop-shadow(0 0 6px rgba(150, 200, 255, 0.4))
-    drop-shadow(0 0 10px rgba(150, 200, 255, 0.2));
-}
-
-.bright-icon {
-  display: block;
-  width: 100%;
-  height: 30px;
-  width: 30px;
-  text-align: center;
-  margin: 5px;
-  background-size: 100%;
-  background-repeat: no-repeat;
-}
-body.dark-mode .bright-icon {
-  filter: invert(1) brightness(1.4) saturate(1.2) drop-shadow(0 0 6px rgba(150, 200, 255, 0.4))
-    drop-shadow(0 0 10px rgba(150, 200, 255, 0.2));
-}
-.post-button {
-  color: #444;
-  font-weight: bold;
+  button svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 </style>

@@ -198,16 +198,19 @@ function editContent(type: EditType) {
       />
     </div>
     <div class="buttons">
-      <div
-        class="button"
-        @click="$emit('send')"
-      >
-        发送
-      </div>
       <label
         :for="fileInputId"
         class="button"
       >选择图片</label>
+      <div
+        class="button primary"
+        role="button"
+        tabindex="0"
+        @click="$emit('send')"
+        @keydown.enter.prevent="$emit('send')"
+      >
+        发送
+      </div>
       <input
         :id="fileInputId"
         type="file"
@@ -222,142 +225,155 @@ function editContent(type: EditType) {
 <style scoped>
 #mdRoot {
   width: 100%;
-  margin-left: 0;
-  margin-right: 0;
-  margin-top: 0;
 }
-.container {
-  margin-top: 0;
-  display: flex;
-  flex-direction: row;
-  /* align-items: center; */
-  justify-content: center;
-  width: 100%;
-  height: auto;
-  div {
-    width: 100%;
-    min-height: 100%;
-    border-radius: 5px;
-    padding: 10px;
-    height: auto;
-    overflow-y: hidden;
-  }
-  textarea {
-    width: 100%;
-    height: 450px;
-    border: 1px solid #d1d1d1;
-    border-radius: 5px;
-    padding: 10px;
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 16px;
-    resize: none;
-    transition: border-color 0.3s;
-    overflow: hidden;
-  }
-}
+
+/* 工具栏：统一胶囊按钮 */
 .editorButton {
-  margin-bottom: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 0.75rem;
+
   button {
-    background-color: #66bb6a;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 10px 15px;
-    margin-right: 10px;
-    margin-top: 10px;
+    min-height: 32px;
+    margin: 0;
+    padding: 0 0.7rem;
+    background-color: var(--surface-2);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 0.82rem;
+    font-weight: 500;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition:
-      background-color 0.3s,
-      transform 0.2s;
+      background-color 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
+
     &:hover {
-      background-color: #4caf50;
-      transform: translateY(-2px);
+      background-color: var(--accent-muted);
+      color: var(--accent);
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--color-border));
     }
   }
 }
 
+.container {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  width: 100%;
+
+  > div {
+    width: 100%;
+    min-height: 100%;
+    border-radius: var(--radius-md);
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--color-border);
+    background: var(--surface-1);
+    overflow-y: auto;
+    max-height: 620px;
+  }
+
+  textarea {
+    width: 100%;
+    height: 450px;
+    min-height: 320px;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    resize: none;
+    overflow: hidden;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
+  }
+
+  textarea::placeholder {
+    color: var(--color-text-secondary);
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--surface-1);
+    box-shadow: 0 0 0 3px var(--accent-muted);
+  }
+}
+
+/* 底部操作 */
 .buttons {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
   width: 100%;
-  height: auto;
-  padding: 10px;
-  border-radius: 5px;
+  margin-top: 1rem;
+
   .button {
-    width: 20vw;
-    max-width: 100px;
-    margin-right: 20px;
-    margin-top: 20px;
-    padding: 10px;
-    border-radius: 8px;
-    background-color: #42a5f5;
-    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    margin: 0;
+    padding: 0 1.5rem;
+    border-radius: var(--radius-md);
+    background-color: var(--surface-1);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    font-size: 0.9rem;
+    font-weight: 500;
     text-align: center;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition:
-      background-color 0.3s,
-      transform 0.2s;
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease;
 
     &:hover {
-      background-color: #2196f3;
-      transform: translateY(-2px);
+      border-color: var(--accent);
+      color: var(--accent);
+      background-color: var(--surface-1);
     }
-  }
-}
 
-@media screen and (min-width: 768px) {
-  button {
-    margin-left: 5px;
-    margin-right: 5px;
+    &.primary {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      color: var(--accent-foreground);
+
+      &:hover {
+        background-color: var(--accent-hover);
+        border-color: var(--accent-hover);
+        color: var(--accent-foreground);
+      }
+    }
   }
 }
 
 @media screen and (max-width: 768px) {
   .editorButton {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
     width: 100%;
-    gap: 10px;
+    gap: 8px;
   }
-  .buttons .button {
-    padding: 6px;
-    height: 4vh;
-    margin: 0 8px;
-  }
-}
 
-/* 深色模式 */
-body.dark-mode {
-  .editorButton {
-    button {
-      background-color: darkorange;
-      color: #ffffff;
-      &:hover {
-        background-color: orange;
-        transform: translateY(-2px);
-      }
-    }
-  }
   .container {
-    textarea {
-      background-color: #333333;
-      color: #ffffff;
-      border: 1px solid #555555;
-      &:focus {
-        border-color: #00eeff;
-        outline: none;
-      }
-    }
+    flex-direction: column;
   }
-  .button {
-    background-color: #2196f3;
-    color: #ffffff;
-    &:hover {
-      background-color: #1976d2;
+
+  .buttons {
+    justify-content: stretch;
+
+    .button {
+      flex: 1;
     }
   }
 }

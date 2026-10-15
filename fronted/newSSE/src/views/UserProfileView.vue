@@ -39,7 +39,7 @@ function navigateChat() {
 </script>
 
 <template>
-  <div v-if="user" class="user-profile-wrapper page-section">
+  <div v-if="user" class="page-section user-profile-wrapper">
     <div class="profile-card profile-header-wrapper">
       <div class="profile-header">
         <UserAvatar class="relative" :src="user.avatarURL" :user-name="user.name" :user-score="user.score" />
@@ -66,48 +66,58 @@ function navigateChat() {
 <style lang="scss">
 .user-profile-wrapper {
   width: 100%;
-  padding: 0 1em;
 }
 
 .profile-header-wrapper {
   display: grid;
   width: 100%;
-  height: 160px;
+  min-height: 140px;
   align-items: end;
-  padding: 1rem;
+  padding: 0.5rem 0;
 
   .profile-header {
     display: flex;
     align-items: center;
 
     .btn-chat {
-      color: #909eb4;
-      padding: 0.3em 1em;
-      border: 1px solid #909eb4;
-      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      color: var(--color-text);
+      padding: 0.3em 1.1em;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--surface-1);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       align-self: flex-end;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition:
+        border-color 0.2s ease,
+        color 0.2s ease;
 
       svg {
         vertical-align: middle;
-        margin-right: 0.2em;
+        margin-right: 0.3em;
       }
 
       &:hover {
-        color: #666f7e;
-        border-color: #666f7e;
-        background: #666f7e10;
+        color: var(--accent);
+        border-color: var(--accent);
+        background: var(--surface-1);
       }
     }
   }
 }
 
 .profile-card {
-  background: var(--chat-bg-main);
-  border: 1px solid #ddd;
+  background: var(--surface-1);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
   margin: 0.5em 0;
-  padding: 1em;
-  border-radius: 5px;
+  padding: 1.1rem 1.2rem;
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
 }
 </style>

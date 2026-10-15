@@ -44,15 +44,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-@media screen and (min-width: 768px) {
-  .root {
-    margin: 0 5%;
-  }
-  p {
-    text-indent: 2rem;
-  }
-}
-
 @media screen and (max-width: 768px) {
   .root {
     overflow-x: hidden;

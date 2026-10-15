@@ -209,37 +209,56 @@ function useCustomEvent(type: 'delete' | 'save' | 'like') {
   margin-bottom: 8px;
 }
 
+.card-title h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
 /* 评论按钮样式 - 与普通帖子保持一致 */
 .commentButton {
   display: flex;
   justify-content: flex-end;
+  gap: 0.5rem;
   margin-top: 10px;
 }
 
 .commentButton button {
-  margin-left: 5px;
-  margin-right: 5px;
-  background: #4a90e2;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+  min-height: 36px;
   min-width: 80px;
+  padding: 6px 14px;
+  margin: 0;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .commentButton button:hover {
-  background: #357abd;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--accent-foreground);
 }
 
 .report-btn {
-  background: #e74c3c !important;
+  background: var(--surface-1) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-secondary) !important;
 }
 
 .report-btn:hover {
-  background: #c0392b !important;
+  background: var(--surface-1) !important;
+  border-color: color-mix(in srgb, var(--color-error) 55%, transparent) !important;
+  color: var(--color-error) !important;
 }
 
 .report-input {
@@ -252,23 +271,36 @@ function useCustomEvent(type: 'delete' | 'save' | 'like') {
 .report-input input {
   flex: 1;
   max-width: 300px;
+  min-height: 36px;
   padding: 6px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   font-size: 14px;
+  font-family: var(--font-sans);
+  background: var(--surface-2);
+  color: var(--color-text);
+}
+
+.report-input input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-muted);
 }
 
 .report-input button {
-  background: #e74c3c;
-  color: white;
+  min-height: 36px;
+  background: var(--color-error);
+  color: #fff;
   border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  padding: 6px 14px;
   font-size: 14px;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
 .report-input button:hover {
-  background: #c0392b;
+  background: color-mix(in srgb, var(--color-error) 85%, #000);
+  color: #fff;
 }
 </style>

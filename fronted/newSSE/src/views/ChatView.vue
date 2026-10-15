@@ -259,7 +259,7 @@ onUnmounted(() => {
           <div class="message-footer">
             <div class="message-controls">
               <button
-                class="anonymous-toggle disabled"
+                class="disabled anonymous-toggle"
                 title="匿名聊天功能未开放"
                 @click="toggleAnonymousMode"
               >
@@ -292,38 +292,33 @@ onUnmounted(() => {
   padding: 0 15px;
 }
 
-.contact-list {
-  display: flex;
-  max-height: calc(90dvh - 100px);
-  width: 25%;
-  padding: 0;
-  flex-direction: column;
-  background: var(--chat-bg-main);
-  border-radius: 5px;
-  overflow: hidden;
-}
-
+.contact-list,
 .contact-list2 {
   display: flex;
   max-height: calc(90dvh - 100px);
   width: 25%;
   padding: 0;
   flex-direction: column;
-  background: var(--chat-bg-main);
-  border-radius: 5px;
+  background: var(--surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
 .contact-header {
-  font-weight: bold;
-  padding: 0.5rem;
-  padding-left: 0.75rem;
-  box-shadow: 0 0 20px #00000080;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.7rem 0.85rem;
+  border-bottom: 1px solid var(--color-border);
   z-index: 1000;
 
   svg {
     vertical-align: middle;
-    margin-right: 0.25rem;
+    flex-shrink: 0;
   }
 }
 
@@ -334,9 +329,14 @@ onUnmounted(() => {
   align-items: center;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: var(--color-hover);
+  }
 
   &.selected {
-    background: var(--chat-bg-highlight);
+    background: var(--accent-muted);
     cursor: auto;
   }
 }
@@ -356,20 +356,20 @@ onUnmounted(() => {
 
 .contact-name {
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .contact-name2 {
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .contact-intro {
-  color: #555;
+  color: var(--color-text-secondary);
   font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -383,9 +383,9 @@ onUnmounted(() => {
   display: inline-block;
   font-size: 85%;
   border-radius: 20px;
-  padding: 0.05rem 0.3rem;
-  background: rgb(0, 123, 255);
-  color: #fff;
+  padding: 0.05rem 0.4rem;
+  background: var(--accent);
+  color: var(--accent-foreground);
   vertical-align: 0.1em;
 }
 
@@ -397,30 +397,33 @@ onUnmounted(() => {
   }
 
   &::-webkit-scrollbar-thumb {
-    background-color: #00000080;
+    background-color: var(--color-scroll-thumb);
   }
 
   &::-webkit-scrollbar-track {
-    background-color: #00000030;
+    background-color: var(--color-scroll);
   }
 }
 
 .chat-main {
   height: 100%;
   flex: 1;
+  min-width: 0;
 }
 
 .message-panel {
   display: flex;
   height: calc(90dvh - 100px);
   flex-direction: column;
-  background: var(--chat-bg-main);
-  border-radius: 5px;
+  background: var(--surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
 .message-header {
-  box-shadow: 0 0 20px #00000080;
+  border-bottom: 1px solid var(--color-border);
   z-index: 1000;
 }
 
@@ -441,6 +444,7 @@ onUnmounted(() => {
 
 .message-info {
   margin: 0.5rem;
+  min-width: 0;
 }
 
 .message-time {
@@ -450,7 +454,7 @@ onUnmounted(() => {
 
 .message-time > div {
   padding: 0.1rem 0.75rem;
-  background: #cccccc80;
+  background: var(--surface-2);
   border-radius: 15px;
   margin: 0.5rem 0;
   font-size: 12px;
@@ -458,16 +462,18 @@ onUnmounted(() => {
 }
 
 .message-sender {
-  color: #999;
+  color: var(--color-text-secondary);
   margin: 0 0.3rem 0.2rem 0.3rem;
   font-size: 13px;
 }
 
 .message-body {
   background: var(--chat-bg-highlight);
-  padding: 0.3rem 0.7rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 0 10px 10px 10px;
   float: left;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 .message-entry.reversed {
@@ -478,14 +484,16 @@ onUnmounted(() => {
   }
 
   .message-body {
+    background: var(--accent);
+    color: var(--accent-foreground);
     border-radius: 10px 0 10px 10px;
     float: right;
   }
 }
 
 .message-footer {
-  background: var(--chat-bg-highlight);
-  box-shadow: 0 0 20px #00000080;
+  background: var(--surface-2);
+  border-top: 1px solid var(--color-border);
   padding: 0.5rem;
 }
 
@@ -494,33 +502,41 @@ onUnmounted(() => {
   font-size: 16px;
   font-family: inherit;
   width: 100% !important;
-  caret-color: rgb(0, 123, 255);
+  caret-color: var(--accent);
   padding: 0.5em;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   outline: none !important;
-  background: var(--chat-bg-main);
+  background: var(--surface-1);
+  color: var(--color-text);
 
   &:hover,
   &:focus {
-    box-shadow: 0 0 5px 0.1rem rgba(0, 123, 255, 0.25);
-    border-color: rgb(0, 123, 255);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-muted);
   }
 }
 
 .message-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
   float: right;
-  color: var(--chat-text);
-  padding: 0.3em 1em;
-  border: 1px solid var(--chat-text);
-  border-radius: 3px;
-  background: var(--chat-bg-main);
+  color: var(--accent-foreground);
+  padding: 0.3em 1.2em;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--accent);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
 
   &:hover {
-    color: rgb(0, 123, 255);
-    box-shadow: 0 0 5px 0.1rem rgba(0, 123, 255, 0.25);
-    border-color: rgb(0, 123, 255);
+    background: var(--accent-hover);
+    color: var(--accent-foreground);
   }
 }
 
@@ -532,36 +548,40 @@ onUnmounted(() => {
 
 .anonymous-toggle {
   padding: 0.3em 0.8em;
-  border: 1px solid #ccc;
-  border-radius: 15px;
-  background: var(--chat-bg-main);
-  color: var(--chat-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--surface-1);
+  color: var(--color-text-secondary);
   cursor: pointer;
   font-size: 12px;
-  transition: all 0.3s ease;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 
   &:hover {
-    background: #f0f0f0;
-    border-color: #999;
+    background: var(--surface-1);
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   &.disabled {
-    background: #f5f5f5;
-    color: #999;
+    background: var(--surface-1);
+    color: var(--color-text-secondary);
     cursor: not-allowed;
     opacity: 0.6;
 
     &:hover {
-      background: #f5f5f5;
-      border-color: #ccc;
+      background: var(--surface-1);
+      border-color: var(--color-border);
+      color: var(--color-text-secondary);
     }
   }
 
   &.active {
-    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-    color: white;
-    border-color: #ff6b6b;
+    background: var(--accent);
+    color: var(--accent-foreground);
+    border-color: var(--accent);
   }
 }
 

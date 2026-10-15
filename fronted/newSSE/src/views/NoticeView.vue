@@ -80,38 +80,62 @@ onMounted(async () => {
 
 <template>
   <div class="root page-section">
-    <h2 class="page-heading notice-title">
+    <h2 class="page-heading">
       通知
     </h2>
-    <div class="noticeButtons">
-      <button @click="readPage = true">
-        未读通知
-      </button>
+    <div class="notice-toolbar">
+      <div class="notice-tabs" role="tablist">
+        <button
+          type="button"
+          class="notice-tab"
+          :class="{ active: readPage }"
+          role="tab"
+          :aria-selected="readPage"
+          @click="readPage = true"
+        >
+          未读通知
+        </button>
+        <button
+          type="button"
+          class="notice-tab"
+          :class="{ active: !readPage }"
+          role="tab"
+          :aria-selected="!readPage"
+          @click="readPage = false"
+        >
+          已读通知
+        </button>
+      </div>
       <button
+        type="button"
+        class="read-all-btn"
         :disabled="noticesUnread.length === 0"
         @click="readAll"
       >
         {{ noticesUnread.length === 0 ? '全读完了' : '一键已读' }}
       </button>
-      <button @click="readPage = false">
-        已读通知
-      </button>
     </div>
     <!-- 未读界面 -->
-    <div v-if="readPage">
+    <div v-if="readPage" class="notice-list">
       <div
         v-for="notice in noticesUnread"
         :key="notice.noticeID"
         class="notice"
       >
-        <span>{{ notice.senderName }}</span>
-        <p>{{ notice.content }}</p>
-        <span>{{ strHandler('time', notice.time) }}</span>
-        <div class="noticeButtons">
-          <button @click="readComment(notice.noticeID)">
+        <div class="notice-head">
+          <span class="notice-sender">{{ notice.senderName }}</span>
+          <span class="notice-time">{{ strHandler('time', notice.time) }}</span>
+        </div>
+        <p class="notice-content">
+          {{ notice.content }}
+        </p>
+        <div class="notice-actions">
+          <button type="button" class="notice-btn" @click="readComment(notice.noticeID)">
             标记为已读
           </button>
           <button
+            type="button"
+            class="notice-btn primary"
             :disabled="notice.postID === 0"
             @click="changeToPost(notice.postID, notice.noticeID)"
           >
@@ -119,24 +143,41 @@ onMounted(async () => {
           </button>
         </div>
       </div>
+      <div v-if="noticesUnread.length === 0" class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+        <h3>没有未读通知</h3>
+        <p>新的互动会出现在这里</p>
+      </div>
     </div>
     <!-- 已读界面 -->
-    <div v-else>
+    <div v-else class="notice-list">
       <div
         v-for="notice in noticesRead"
         :key="notice.noticeID"
         class="notice"
       >
-        <span>{{ notice.senderName }}</span>
-        <p>{{ notice.content }}</p>
-        <span>{{ strHandler('time', notice.time) }}</span>
-        <div>
-          <button
-            @click="changeToPost(notice.postID, notice.noticeID)"
-          >
+        <div class="notice-head">
+          <span class="notice-sender">{{ notice.senderName }}</span>
+          <span class="notice-time">{{ strHandler('time', notice.time) }}</span>
+        </div>
+        <p class="notice-content">
+          {{ notice.content }}
+        </p>
+        <div class="notice-actions">
+          <button type="button" class="notice-btn" @click="changeToPost(notice.postID, notice.noticeID)">
             查看原帖
           </button>
         </div>
+      </div>
+      <div v-if="noticesRead.length === 0" class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+        <h3>暂无已读通知</h3>
       </div>
     </div>
   </div>
@@ -149,40 +190,182 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
 }
-.notice-title,
-.noticeButtons {
-  width: 100%;
+
+.notice-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
-.notice-title {
-  color: var(--color-text);
-  margin-left: auto;
-  margin-right: auto;
-  text-align: center;
+.notice-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
+
+.notice-tab {
+  min-height: 34px;
+  padding: 0 1rem;
+  margin: 0;
+  border: none;
+  border-radius: calc(var(--radius-md) - 3px);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.notice-tab:hover {
+  color: var(--color-text);
+  background: transparent;
+}
+
+.notice-tab.active {
+  background: var(--surface-1);
+  color: var(--accent);
+  box-shadow: var(--shadow-xs);
+}
+
+.read-all-btn {
+  min-height: 38px;
+  padding: 0 1.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.read-all-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--surface-1);
+}
+
+.read-all-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.read-all-btn:disabled:hover {
+  border-color: var(--color-border);
+  color: var(--color-text);
+  background: var(--surface-1);
+}
+
+.notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .notice {
   border: 1px solid var(--color-border);
-  margin: 10px;
-  padding: 10px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-xs);
+  padding: 0.9rem 1rem;
 }
-.noticeButtons {
+
+.notice-head {
   display: flex;
-  flex-direction: row;
-  justify-content: space-around;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
 }
-p {
-  text-indent: 2rem;
+
+.notice-sender {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.notice-time {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.notice-content {
+  margin: 0 0 0.7rem;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
   word-break: break-all;
   white-space: pre-wrap;
 }
-button:disabled {
-  background-color: var(--color-bg);
-  color: var(--color-text);
-  cursor: not-allowed;
-  transition: none;
+
+.notice-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
-button:disabled:hover {
-  background-color: var(--color-bg);
+
+.notice-btn {
+  min-height: 34px;
+  padding: 0 0.9rem;
+  margin: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
   color: var(--color-text);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.notice-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--surface-1);
+}
+
+.notice-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.notice-btn.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--accent-foreground);
+}
+
+.notice-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.notice-btn:disabled:hover {
+  border-color: var(--color-border);
+  color: var(--color-text);
+  background: var(--surface-1);
+}
+
+.notice-btn.primary:disabled:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-foreground);
 }
 </style>

@@ -125,13 +125,12 @@ onMounted(() => {
         >
 
         <!-- 售出标记 -->
-        <div v-if="isSoldOut" class="sold-out-mark">
-          <span class="sold-out-text">已售出</span>
+        <div v-if="isSoldOut" class="sold-out-chip">
+          已售出
         </div>
 
         <!-- 图片错误状态 -->
         <div v-if="imageError" class="image-error">
-          <span class="error-icon">📷</span>
           <span class="error-text">图片加载失败</span>
         </div>
       </div>
@@ -141,18 +140,22 @@ onMounted(() => {
           {{ product.name }}
         </h3>
         <p class="product-seller">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
           {{ sellerName || product.seller || (product.sellerId ? `用户${product.sellerId}` : '匿名用户') }}
+        </p>
+        <p class="product-description" :title="product.description">
+          {{ product.description }}
         </p>
         <div class="product-price">
           <span class="current-price">¥{{ product.price.toLocaleString() }}</span>
         </div>
-        <p class="product-description" :title="product.description">
-          {{ product.description }}
-        </p>
       </div>
 
       <button
-        class="add-to-cart"
+        class="detail-btn"
         :class="{ 'sold-out-btn': isSoldOut }"
         :disabled="isSoldOut"
         @click="viewDetail"
@@ -191,13 +194,12 @@ onMounted(() => {
           >
 
           <!-- 售出标记 -->
-          <div v-if="isSoldOut" class="sold-out-mark">
-            <span class="sold-out-text">已售出</span>
+          <div v-if="isSoldOut" class="sold-out-chip">
+            已售出
           </div>
 
           <!-- 图片错误状态 -->
           <div v-if="imageError" class="image-error">
-            <span class="error-icon">📷</span>
             <span class="error-text">图片加载失败</span>
           </div>
         </div>
@@ -211,6 +213,10 @@ onMounted(() => {
               {{ product.description }}
             </p>
             <p class="product-seller">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
               {{ sellerName || product.seller || (product.sellerId ? `用户${product.sellerId}` : '匿名用户') }}
             </p>
           </div>
@@ -220,7 +226,7 @@ onMounted(() => {
               <span class="current-price">¥{{ product.price.toLocaleString() }}</span>
             </div>
             <button
-              class="add-to-cart"
+              class="detail-btn"
               :class="{ 'sold-out-btn': isSoldOut }"
               :disabled="isSoldOut"
               @click="viewDetail"
@@ -235,29 +241,34 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* 商品卡片样式 */
+/* 商品卡片 */
 .product-card {
-  background: var(--shop-card-bg);
-  border-radius: 12px;
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
   position: relative;
 }
 
 .product-card:hover {
   transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--color-border));
 }
 
 .product-image {
-  height: 220px;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   position: relative;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  border-radius: 12px 12px 0 0;
   background: var(--shop-skeleton-bg);
 }
 
@@ -271,17 +282,17 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--shop-card-bg);
+  background: var(--shop-skeleton-bg);
   z-index: 2;
 }
 
 .loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--shop-skeleton-bg);
-  border-top: 3px solid var(--color-info);
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--accent);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.9s linear infinite;
 }
 
 @keyframes spin {
@@ -304,14 +315,9 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--shop-card-bg);
+  background: var(--shop-skeleton-bg);
   color: var(--shop-text-muted);
   z-index: 2;
-}
-
-.error-icon {
-  font-size: 24px;
-  margin-bottom: 8px;
 }
 
 .error-text {
@@ -322,188 +328,147 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  filter: brightness(1) contrast(1);
+  transition: transform 0.4s ease;
 }
 
-/* Add image orientation preservation */
 .preserve-orientation {
   image-orientation: from-image;
 }
 
 .product-card:hover .product-image img {
-  transform: scale(1.08);
-  filter: brightness(1.1) contrast(1.1);
+  transform: scale(1.04);
+}
+
+.sold-out .product-image img {
+  filter: grayscale(100%);
+}
+
+/* 售出标记 */
+.sold-out-chip {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: rgba(15, 23, 42, 0.7);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
 }
 
 .product-info {
-  padding: 24px;
+  padding: 0.9rem 1rem 0.35rem;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  position: relative;
-  z-index: 2;
+  gap: 0.35rem;
 }
 
 .product-name {
-  font-size: 18px;
+  font-size: 0.95rem;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--color-text);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.4;
-  text-align: center;
 }
 
 .product-seller {
-  font-size: 13px;
+  font-size: 0.78rem;
   color: var(--shop-text-muted);
   margin: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-seller svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
 }
 
 .product-price {
-  margin: 8px 0;
+  margin: 0.15rem 0 0;
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .current-price {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--color-error);
-  margin: 0;
-  position: relative;
-}
-
-.current-price::before {
-  content: '¥';
-  position: absolute;
-  left: -15px;
-  top: 0;
-  font-size: 16px;
-  opacity: 0.7;
-}
-
-.original-price {
-  font-size: 14px;
-  color: #999;
-  text-decoration: line-through;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-price);
+  letter-spacing: -0.01em;
 }
 
 .product-description {
-  font-size: 13px;
+  font-size: 0.8rem;
   color: var(--shop-text-secondary);
-  margin: 8px 0;
-  flex-grow: 1;
+  margin: 0;
   display: -webkit-box;
-  /* -webkit-line-clamp: 2; */
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.5;
 }
 
-.add-to-cart {
-  padding: 14px 20px;
-  background: #2d5016;
-  color: white;
+/* 查看详情按钮 */
+.detail-btn {
+  margin: 0.75rem 1rem 1rem;
+  min-height: 38px;
+  background: var(--accent);
+  color: var(--accent-foreground);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: auto;
+  transition: background-color 0.2s ease;
   font-weight: 600;
-  font-size: 15px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  position: relative;
+  font-size: 0.875rem;
 }
 
-.add-to-cart:hover {
-  background: #3a6b1a;
-  transform: translateY(-1px);
+.detail-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
 }
 
-.add-to-cart:active {
-  transform: translateY(-1px);
-}
-
-/* 已售出商品的样式 */
 .sold-out {
-  opacity: 0.7;
-  /* 整体稍微变暗 */
+  opacity: 0.85;
 }
 
-.sold-out .product-image img {
-  filter: grayscale(100%);
-  /* 图片变灰 */
-}
-
-.sold-out-mark {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 3;
-}
-
-.sold-out-text {
-  font-size: 20px;
-  font-weight: bold;
-  transform: rotate(-35deg);
-  transform-origin: center;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  background: linear-gradient(45deg, #e74c3c, #c0392b);
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 2px solid white;
-}
-
-/* 已售出商品的按钮样式 */
 .sold-out-btn {
-  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%) !important;
+  background: var(--surface-2) !important;
+  color: var(--color-text-secondary) !important;
   cursor: not-allowed !important;
-  opacity: 0.7;
 }
 
-.sold-out-btn:hover {
-  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%) !important;
-  transform: none !important;
-}
-
-/* 列表模式样式 */
+/* 列表模式 */
 .product-card.list-mode {
-  height: 160px;
   flex-direction: row;
-  padding: 0;
+  padding: 0.75rem;
+  gap: 1rem;
+  align-items: stretch;
 }
 
 .list-layout-content {
   display: flex;
   width: 100%;
-  height: 100%;
   align-items: center;
-  gap: 20px;
-  padding: 20px;
+  gap: 1rem;
 }
 
 .list-image-container {
-  width: 120px;
-  height: 120px;
+  width: 110px;
+  height: 110px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   position: relative;
   cursor: pointer;
@@ -515,71 +480,40 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  filter: brightness(1) contrast(1);
+  transition: transform 0.4s ease;
 }
 
 .list-image-container:hover img {
   transform: scale(1.05);
-  filter: brightness(1.1) contrast(1.1);
 }
 
 .list-info-container {
   flex: 1;
+  min-width: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 100%;
+  gap: 1rem;
 }
 
 .list-main-info {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-right: 20px;
-}
-
-.list-main-info .product-name {
-  font-size: 18px;
-  margin: 0;
-  color: var(--color-text);
-  font-weight: 700;
-  line-height: 1.4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: center;
+  gap: 0.3rem;
 }
 
 .list-main-info .product-description {
-  font-size: 14px;
-  color: var(--shop-text-secondary);
-  margin: 0;
-  display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.4;
-}
-
-.list-main-info .product-seller {
-  font-size: 13px;
-  color: var(--shop-text-muted);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
 }
 
 .list-action-container {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 12px;
+  gap: 0.6rem;
   flex-shrink: 0;
 }
 
@@ -587,70 +521,24 @@ onMounted(() => {
   margin: 0;
 }
 
-.list-action-container .current-price {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--color-error);
+.list-action-container .detail-btn {
   margin: 0;
+  min-width: 104px;
+  padding-inline: 1rem;
 }
 
-.list-action-container .add-to-cart {
-  padding: 10px 20px;
-  background: #2d5016;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 600;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  position: relative;
-  min-width: 100px;
-}
+@media (max-width: 600px) {
+  .product-card.list-mode {
+    align-items: stretch;
+  }
 
-.list-action-container .add-to-cart:hover {
-  background: #3a6b1a;
-  transform: translateY(-1px);
-}
+  .list-image-container {
+    width: 96px;
+    height: 96px;
+  }
 
-/* 列表模式下的售出标记 */
-.list-mode .sold-out-mark {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 3;
-}
-
-.list-mode .sold-out-text {
-  font-size: 16px;
-  font-weight: bold;
-  transform: rotate(-35deg);
-  transform-origin: center;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  background: linear-gradient(45deg, #e74c3c, #c0392b);
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 2px solid white;
-}
-
-/* 列表模式下的已售出按钮 */
-.list-mode .sold-out-btn {
-  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%) !important;
-  cursor: not-allowed !important;
-  opacity: 0.7;
-}
-
-.list-mode .sold-out-btn:hover {
-  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%) !important;
-  transform: none !important;
+  .list-action-container {
+    align-items: flex-end;
+  }
 }
 </style>

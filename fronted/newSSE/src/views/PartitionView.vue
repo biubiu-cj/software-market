@@ -20,7 +20,7 @@ defineOptions({
 const name = ref('')
 const route = useRoute()
 const router = useRouter()
-const { restorePosts, storePosts } = usePostStore()
+const { storePosts } = usePostStore()
 const { posts, update, isLoading, hasMore, initialize } = usePostView()
 
 const isDense = ref(false)

@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import ShopSidebar from '@/components/ShopSidebar.vue'
 
+const route = useRoute()
 const isSidebarVisible = ref(false)
+
+// 导航后自动收起抽屉
+watch(() => route.fullPath, () => {
+  isSidebarVisible.value = false
+})
 
 function toggleSidebar() {
   isSidebarVisible.value = !isSidebarVisible.value
@@ -14,48 +21,99 @@ function closeSidebar() {
 </script>
 
 <template>
-  <div class="floating-ball" @click="toggleSidebar">
-    <i class="material-icons">{{ isSidebarVisible ? '<' : '菜单' }}</i>
-  </div>
-  <div v-if="isSidebarVisible" class="shop-sidebar-container">
-    <ShopSidebar @close="closeSidebar" />
-  </div>
+  <button
+    type="button"
+    class="floating-ball"
+    aria-label="打开商城菜单"
+    title="商城菜单"
+    @click="toggleSidebar"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="4" y1="7" x2="20" y2="7" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="17" x2="20" y2="17" />
+    </svg>
+  </button>
+  <template v-if="isSidebarVisible">
+    <div class="shop-drawer-overlay" @click="closeSidebar" />
+    <div class="shop-drawer">
+      <ShopSidebar @close="closeSidebar" />
+    </div>
+  </template>
 </template>
 
 <style scoped>
 .floating-ball {
   position: fixed;
-  top: 28px;
-  left: 10px;
-  width: 60px;
-  height: 60px;
+  right: 14px;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  padding: 0;
+  border: none;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.4);
+  background: var(--accent);
+  color: var(--accent-foreground);
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  user-select: none;
-  z-index: 1000;
-  transition: all 0.3s ease;
+  box-shadow: var(--shadow-lg);
+  z-index: 1200;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .floating-ball:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  background: var(--accent-hover);
+  transform: scale(1.05);
 }
 
-.shop-sidebar-container {
+.floating-ball svg {
+  width: 22px;
+  height: 22px;
+}
+
+.shop-drawer-overlay {
   position: fixed;
-  top: 0px;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 1290;
+}
+
+.shop-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
   left: 0;
-  width: 0%;
-  height: 100%;
-  background-color: white;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  z-index: 999;
-  transition: transform 0.3s ease;
+  width: min(78vw, 260px);
+  padding: 0.75rem;
+  background: var(--surface-1);
+  border-right: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  z-index: 1300;
+  overflow-y: auto;
+  animation: drawer-in 0.2s ease;
+}
+
+.shop-drawer :deep(.shop-sidebar) {
+  width: 100%;
+  border: none;
+  box-shadow: none;
+  padding: 0.25rem 0;
+  background: transparent;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 </style>

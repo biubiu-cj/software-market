@@ -19,7 +19,7 @@ defineOptions({
   name: 'HomeView',
 })
 const route = useRoute()
-const { restorePosts, storePosts } = usePostStore()
+const { storePosts } = usePostStore()
 const { posts, isLoading, hasMore, update, initialize } = usePostView()
 const { initNewPostsCache, newPostsNotification } = useNewPostsStore()
 // 保存滚动位置

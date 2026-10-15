@@ -199,13 +199,6 @@ function handlePriceRangeChange(range: string): void {
   selectedPriceRange.value = range
 }
 
-// 布局切换
-/*
-function toggleLayoutMode(): void {
-  layoutMode.value = layoutMode.value === 'grid' ? 'list' : 'grid'
-}
-*/
-
 // 设置布局模式
 function setLayoutMode(mode: 'grid' | 'list'): void {
   layoutMode.value = mode
@@ -214,7 +207,7 @@ function setLayoutMode(mode: 'grid' | 'list'): void {
 // 图片错误处理
 function handleImageError(event: Event): void {
   const img = event.target as HTMLImageElement
-  img.src = 'https://via.placeholder.com/400x300?text=图片加载失败'
+  img.src = '/images/nophotos.png'
 }
 
 // 监听路由变化，重新获取数据
@@ -245,7 +238,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="w-full flex flex-row">
+  <div class="shop-view w-full">
     <!-- 加载中骨架屏 -->
     <template v-if="isLoading">
       <div class="skeleton-screen">
@@ -267,7 +260,11 @@ onBeforeUnmount(() => {
       <div class="error-container">
         <div class="error-content">
           <div class="error-icon">
-            ⚠
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
           </div>
           <h3 class="error-title">
             加载失败
@@ -284,191 +281,188 @@ onBeforeUnmount(() => {
 
     <!-- 实际内容 -->
     <template v-else>
-      <div class="flex flex-row">
-        <div>
-          <!-- 功能区和轮播图块 -->
-          <div class="top-section flex-">
-            <!-- 轮播窗 -->
-            <div class="carousel-container">
+      <!-- 轮播图 + 筛选 -->
+      <div class="top-section">
+        <div class="carousel-container">
+          <div
+            class="carousel"
+            @mouseenter="handleCarouselMouseEnter"
+            @mouseleave="handleCarouselMouseLeave"
+          >
+            <div class="carousel-inner" :style="{ transform: `translateX(-${currentIndex * 100}%)` }">
               <div
-                class="carousel"
-                @mouseenter="handleCarouselMouseEnter"
-                @mouseleave="handleCarouselMouseLeave"
+                v-for="(item, index) in carouselItems"
+                :key="`carousel-${index}`"
+                class="carousel-item"
               >
-                <div class="carousel-inner" :style="{ transform: `translateX(-${currentIndex * 100}%)` }">
-                  <div
-                    v-for="(item, index) in carouselItems"
-                    :key="`carousel-${index}`"
-                    class="carousel-item"
-                  >
-                    <img
-                      :src="item.image"
-                      :alt="item.title"
-                      loading="lazy"
-                      @error="handleImageError"
-                    >
-                    <div class="carousel-overlay">
-                      <h2 class="carousel-title">
-                        {{ item.title }}
-                      </h2>
-                      <p class="carousel-subtitle">
-                        {{ item.subtitle || '精选商品推荐' }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 控制按钮 -->
-                <button
-                  v-if="carouselItems.length > 1"
-                  class="carousel-control prev"
-                  aria-label="上一张"
-                  @click="prevSlide"
+                <img
+                  :src="item.image"
+                  :alt="item.title"
+                  loading="lazy"
+                  @error="handleImageError"
                 >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="15,18 9,12 15,6" />
-                  </svg>
-                </button>
-                <button
-                  v-if="carouselItems.length > 1"
-                  class="carousel-control next"
-                  aria-label="下一张"
-                  @click="nextSlide"
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9,18 15,12 9,6" />
-                  </svg>
-                </button>
-
-                <!-- 指示器 -->
-                <div v-if="carouselItems.length > 1" class="carousel-indicators">
-                  <span
-                    v-for="(item, index) in carouselItems"
-                    :key="`indicator-${index}`"
-                    class="indicator"
-                    :class="{ active: index === currentIndex }"
-                    :aria-label="`跳转到第${index + 1}张`"
-                    @click="goToSlide(index)"
-                  />
+                <div class="carousel-overlay">
+                  <h2 class="carousel-title">
+                    {{ item.title }}
+                  </h2>
+                  <p class="carousel-subtitle">
+                    {{ item.subtitle || '精选商品推荐' }}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <!-- 筛选条件 -->
-            <div class="filter-container">
-              <div class="filter-section">
-                <div class="filter-header">
-                  <h3>筛选条件</h3>
-                </div>
-                <div class="price-filter">
-                  <div class="price-label">
-                    <label>价格区间：</label>
-                  </div>
-                  <select
-                    v-model="selectedPriceRange"
-                    class="price-select"
-                    @change="handlePriceRangeChange(selectedPriceRange)"
-                  >
-                    <option
-                      v-for="range in PRICE_RANGES"
-                      :key="range.value"
-                      :value="range.value"
-                    >
-                      {{ range.label }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
+            <!-- 控制按钮 -->
+            <button
+              v-if="carouselItems.length > 1"
+              class="carousel-control prev"
+              aria-label="上一张"
+              title="上一张"
+              @click="prevSlide"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15,18 9,12 15,6" />
+              </svg>
+            </button>
+            <button
+              v-if="carouselItems.length > 1"
+              class="carousel-control next"
+              aria-label="下一张"
+              title="下一张"
+              @click="nextSlide"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9,18 15,12 9,6" />
+              </svg>
+            </button>
 
-          <!-- 商品展示块 -->
-          <div class="bottom-section">
-            <!-- 商品列表标题 -->
-            <div class="product-list-header">
-              <div class="header-left">
-                <h2 class="product-list-title">
-                  {{ isMain ? '在售商品' : '我的商品' }}
-                </h2>
-                <div class="product-count">
-                  共 {{ displayProductCount }} 件商品
-                </div>
-              </div>
-
-              <!-- 布局切换控制 -->
-              <div class="layout-controls">
-                <div class="layout-toggle">
-                  <button
-                    class="layout-btn"
-                    :class="{ active: layoutMode === 'grid' }"
-                    title="网格布局"
-                    @click="setLayoutMode('grid')"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="3" y="3" width="7" height="7" />
-                      <rect x="14" y="3" width="7" height="7" />
-                      <rect x="14" y="14" width="7" height="7" />
-                      <rect x="3" y="14" width="7" height="7" />
-                    </svg>
-                  </button>
-                  <button
-                    class="layout-btn"
-                    :class="{ active: layoutMode === 'list' }"
-                    title="列表布局"
-                    @click="setLayoutMode('list')"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <line x1="8" y1="6" x2="21" y2="6" />
-                      <line x1="8" y1="12" x2="21" y2="12" />
-                      <line x1="8" y1="18" x2="21" y2="18" />
-                      <line x1="3" y1="6" x2="3.01" y2="6" />
-                      <line x1="3" y1="12" x2="3.01" y2="12" />
-                      <line x1="3" y1="18" x2="3.01" y2="18" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- 商品列表 -->
-            <div class="product-list-wrapper">
-              <div
-                v-if="hasFilteredProducts"
-                class="product-list"
-                :class="{
-                  'grid-layout': layoutMode === 'grid',
-                  'list-layout': layoutMode === 'list',
-                }"
-              >
-                <ProductCard
-                  v-for="product in filteredProducts"
-                  :key="product.productId"
-                  :product="product"
-                  :layout-mode="layoutMode"
-                  @view-detail="handleViewDetail"
-                />
-              </div>
-              <div v-else-if="hasProducts" class="empty-filter-results">
-                <div class="empty-icon">
-                  🔍
-                </div>
-                <h3>没有找到符合条件的商品</h3>
-                <p>请尝试调整筛选条件</p>
-                <button class="clear-filter-btn" @click="selectedPriceRange = ''">
-                  清除筛选
-                </button>
-              </div>
-              <div v-else class="empty-product-list">
-                <div class="empty-icon">
-                  📦
-                </div>
-                <h3>暂无商品</h3>
-                <p>{{ isMain ? '热门商品即将上线，敬请期待！' : '您还没有发布任何商品' }}</p>
-              </div>
+            <!-- 指示器 -->
+            <div v-if="carouselItems.length > 1" class="carousel-indicators">
+              <span
+                v-for="(item, index) in carouselItems"
+                :key="`indicator-${index}`"
+                class="indicator"
+                :class="{ active: index === currentIndex }"
+                :aria-label="`跳转到第${index + 1}张`"
+                @click="goToSlide(index)"
+              />
             </div>
           </div>
         </div>
-        <!-- <ShopSidebar /> -->
+
+        <!-- 筛选条件 -->
+        <aside class="filter-container">
+          <div class="filter-section">
+            <h3 class="filter-title">
+              筛选
+            </h3>
+            <label class="price-label" for="priceRange">价格区间</label>
+            <select
+              id="priceRange"
+              v-model="selectedPriceRange"
+              class="price-select"
+              @change="handlePriceRangeChange(selectedPriceRange)"
+            >
+              <option
+                v-for="range in PRICE_RANGES"
+                :key="range.value"
+                :value="range.value"
+              >
+                {{ range.label }}
+              </option>
+            </select>
+          </div>
+        </aside>
+      </div>
+
+      <!-- 商品展示 -->
+      <div class="bottom-section">
+        <div class="product-list-header">
+          <div class="header-left">
+            <h2 class="product-list-title">
+              {{ isMain ? '在售商品' : '我的商品' }}
+            </h2>
+            <div class="product-count">
+              共 {{ displayProductCount }} 件商品
+            </div>
+          </div>
+
+          <!-- 布局切换 -->
+          <div class="layout-controls">
+            <div class="layout-toggle">
+              <button
+                class="layout-btn"
+                :class="{ active: layoutMode === 'grid' }"
+                title="网格布局"
+                aria-label="网格布局"
+                @click="setLayoutMode('grid')"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
+              </button>
+              <button
+                class="layout-btn"
+                :class="{ active: layoutMode === 'list' }"
+                title="列表布局"
+                aria-label="列表布局"
+                @click="setLayoutMode('list')"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商品列表 -->
+        <div class="product-list-wrapper">
+          <div
+            v-if="hasFilteredProducts"
+            class="product-list"
+            :class="{
+              'grid-layout': layoutMode === 'grid',
+              'list-layout': layoutMode === 'list',
+            }"
+          >
+            <ProductCard
+              v-for="product in filteredProducts"
+              :key="product.productId"
+              :product="product"
+              :layout-mode="layoutMode"
+              @view-detail="handleViewDetail"
+            />
+          </div>
+          <div v-else-if="hasProducts" class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <h3>没有找到符合条件的商品</h3>
+            <p>请尝试调整筛选条件</p>
+            <button class="clear-filter-btn" @click="selectedPriceRange = ''">
+              清除筛选
+            </button>
+          </div>
+          <div v-else class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+            <h3>暂无商品</h3>
+            <p>{{ isMain ? '热门商品即将上线，敬请期待！' : '您还没有发布任何商品' }}</p>
+          </div>
+        </div>
       </div>
     </template>
     <template v-if="!isPC">
@@ -477,220 +471,166 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
-  <style scoped>
-/* 现代化商城容器样式 */
-.shop-container {
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: #f8f9fa;
-  position: relative;
-  overflow-x: hidden;
+<style scoped>
+.shop-view {
+  width: 100%;
 }
 
-/* 错误状态样式 */
+/* ---------- 骨架屏 ---------- */
+.skeleton-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.skeleton-top-section {
+  display: flex;
+  gap: 1rem;
+}
+
+.skeleton-carousel {
+  flex: 1;
+  height: clamp(180px, 24vw, 260px);
+  border-radius: var(--radius-lg);
+  background: var(--shop-skeleton-bg);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.skeleton-filter {
+  width: 220px;
+  flex-shrink: 0;
+  height: 140px;
+  border-radius: var(--radius-lg);
+  background: var(--shop-skeleton-bg);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.skeleton-bottom-section {
+  padding-top: 0.5rem;
+}
+
+.skeleton-title {
+  width: 160px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--shop-skeleton-bg);
+  margin: 0 0 1rem;
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.skeleton-product-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1rem;
+}
+
+.skeleton-product-card {
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-lg);
+  background: var(--shop-skeleton-bg);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* ---------- 错误状态 ---------- */
 .error-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 60vh;
-  padding: 40px 20px;
+  min-height: 50vh;
+  padding: 2rem 1rem;
 }
 
 .error-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  background: var(--shop-section-bg);
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px var(--color-post-card-box-shadow);
+  gap: 0.5rem;
+  background: var(--surface-1);
+  padding: 2.5rem 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
   max-width: 400px;
   color: var(--color-text);
 }
 
 .error-icon {
-  font-size: 48px;
-  margin-bottom: 20px;
+  color: var(--color-text-secondary);
+}
+
+.error-icon svg {
+  width: 40px;
+  height: 40px;
+  opacity: 0.5;
 }
 
 .error-title {
-  font-size: 24px;
-  color: var(--color-error);
-  margin-bottom: 12px;
+  font-size: 1.1rem;
+  color: var(--color-text);
+  margin: 0;
   font-weight: 600;
 }
 
 .error-message {
-  color: var(--shop-text-secondary);
-  margin-bottom: 24px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  font-size: 0.9rem;
   line-height: 1.5;
 }
 
 .retry-button {
-  padding: 12px 24px;
-  background: #4c8baf;
-  color: white;
+  margin-top: 0.75rem;
+  padding: 0.55rem 1.5rem;
+  background: var(--accent);
+  color: var(--accent-foreground);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
 }
 
 .retry-button:hover {
-  background: #3a6b8a;
-  box-shadow: 0 2px 8px rgba(76, 139, 175, 0.2);
+  background: var(--accent-hover);
 }
 
-/* 骨架屏样式 */
-.skeleton-screen {
+/* ---------- 顶部：轮播 + 筛选 ---------- */
+.top-section {
   display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
 }
 
-.skeleton-top-section {
-  display: flex;
-  padding: 20px;
-  background-color: var(--shop-section-bg);
-  border-radius: 8px 8px 0 0;
-  box-shadow: 0 2px 5px var(--color-post-card-box-shadow);
-}
-
-.skeleton-carousel {
+.carousel-container {
   flex: 1;
-  height: 300px;
-  background-color: var(--shop-skeleton-bg);
-  border-radius: 8px;
-  margin-right: 20px;
+  min-width: 0;
 }
 
-.skeleton-filter {
-  width: 250px;
-  background-color: var(--shop-skeleton-bg);
-  padding: 15px;
-  border-radius: 6px;
+.filter-container {
+  width: 220px;
+  flex-shrink: 0;
 }
 
-.skeleton-bottom-section {
-  flex: 1;
-  padding: 20px;
-}
-
-.skeleton-title {
-  height: 30px;
-  background-color: var(--shop-skeleton-bg);
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
-
-.skeleton-product-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 20px;
-}
-
-.skeleton-product-card {
-  height: 300px;
-  background-color: var(--shop-skeleton-bg);
-  border-radius: 8px;
-}
-
-/* 响应式布局 */
-@media (min-width: 768px) {
-  .top-section {
-    display: flex;
-    padding: 20px;
-    background-color: var(--shop-section-bg);
-    border-radius: 8px 8px 0 0;
-    box-shadow: 0 1px 3px var(--color-post-card-box-shadow);
-  }
-
-  .carousel-container {
-    flex: 1;
-    margin-right: 20px;
-  }
-
-  .filter-container {
-    width: 250px;
-    flex-shrink: 0;
-  }
-
-  .bottom-section {
-    flex: 1;
-    padding: 20px;
-  }
-}
-
-@media (max-width: 767px) {
-  .top-section {
-    flex-direction: column;
-    padding: 15px;
-  }
-
-  .carousel-container {
-    width: 100%;
-    margin-bottom: 15px;
-  }
-
-  .carousel {
-    height: 200px;
-  }
-
-  .carousel-overlay {
-    padding: 15px;
-  }
-
-  .carousel-title {
-    font-size: 18px;
-  }
-
-  .carousel-subtitle {
-    font-size: 12px;
-  }
-
-  .filter-container {
-    width: 100%;
-    margin-bottom: 15px;
-  }
-
-  .filter-section {
-    padding: 15px;
-  }
-
-  .price-options {
-    gap: 6px;
-  }
-
-  .price-option {
-    padding: 6px 10px;
-  }
-
-  .bottom-section {
-    width: 100%;
-    padding: 15px;
-  }
-
-  .product-list-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .product-count {
-    font-size: 12px;
-    padding: 4px 8px;
-  }
-}
-
-/* 轮播图样式 */
+/* 轮播图 */
 .carousel {
   position: relative;
-  height: 300px;
+  height: clamp(180px, 24vw, 260px);
   overflow: hidden;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px var(--color-post-card-box-shadow);
-  background: var(--shop-card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  background: var(--surface-1);
   border: 1px solid var(--color-border);
 }
 
@@ -717,26 +657,24 @@ onBeforeUnmount(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.4) 70%, rgba(0, 0, 0, 0.7) 100%);
-  color: white;
-  padding: 30px 20px 20px;
-  text-align: center;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 70%, rgba(0, 0, 0, 0.65) 100%);
+  color: #fff;
+  padding: 1.5rem 1.25rem 1rem;
+  text-align: left;
 }
 
 .carousel-title {
-  font-size: 28px;
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
   font-weight: 700;
-  margin: 0 0 8px 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  color: white;
+  margin: 0 0 0.2rem;
+  color: #fff;
 }
 
 .carousel-subtitle {
-  font-size: 16px;
+  font-size: 0.85rem;
   margin: 0;
-  opacity: 0.9;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  font-weight: 300;
+  opacity: 0.92;
+  font-weight: 400;
 }
 
 /* 轮播控制按钮 */
@@ -744,11 +682,11 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--shop-card-bg);
+  background: var(--surface-1);
   color: var(--color-text);
-  border: none;
-  width: 50px;
-  height: 50px;
+  border: 1px solid var(--color-border);
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -756,147 +694,137 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px var(--color-post-card-box-shadow);
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .carousel-control:hover {
-  background: var(--shop-card-bg);
-  transform: translateY(-50%) scale(1.05);
-  box-shadow: 0 4px 12px var(--color-post-card-hover-box-shadow);
-}
-
-.carousel-control:active {
-  transform: translateY(-50%) scale(1.05);
+  box-shadow: var(--shadow-md);
+  color: var(--accent);
 }
 
 .carousel-control.prev {
-  left: 15px;
+  left: 12px;
 }
 
 .carousel-control.next {
-  right: 15px;
+  right: 12px;
 }
 
 /* 轮播指示器 */
 .carousel-indicators {
   position: absolute;
-  bottom: 20px;
+  bottom: 12px;
   left: 0;
   right: 0;
   display: flex;
   justify-content: center;
-  gap: 12px;
-  padding: 10px;
+  gap: 6px;
+  padding: 8px;
 }
 
 .indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.4);
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.45);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
+  transition: all 0.25s ease;
 }
 
 .indicator:hover {
-  background: rgba(255, 255, 255, 0.7);
-  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.75);
 }
 
 .indicator.active {
-  background: white;
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  transform: scale(1.2);
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+  width: 20px;
+  background: #fff;
 }
 
-/* 筛选框样式 */
+/* 筛选卡片 */
 .filter-section {
-  background: var(--shop-filter-bg);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px var(--color-post-card-box-shadow);
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1rem;
+  box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
-  position: relative;
 }
 
-.filter-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.filter-section h3 {
-  margin: 0;
-  font-size: 18px;
+.filter-title {
+  margin: 0 0 0.9rem;
+  font-size: 0.95rem;
   color: var(--color-text);
   font-weight: 600;
-}
-
-.price-filter {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
 }
 
 .price-label {
-  font-weight: 600;
-  color: var(--color-text);
-  font-size: 14px;
+  display: block;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  margin-bottom: 0.45rem;
 }
 
 .price-select {
   width: 100%;
-  padding: 12px 16px;
-  border: 2px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--shop-filter-bg);
+  height: 2.5rem;
+  padding: 0 2.25rem 0 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
   color: var(--color-text);
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-family: var(--font-sans);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  padding-right: 40px;
+  background-position: right 10px center;
+  background-size: 15px;
 }
 
 .price-select:hover {
-  border-color: var(--color-info);
-  background-color: var(--shop-filter-bg);
-  box-shadow: 0 2px 8px var(--color-hover);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--color-border));
 }
 
 .price-select:focus {
   outline: none;
-  border-color: var(--color-info);
-  box-shadow: 0 0 0 3px var(--color-hover);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-muted);
 }
 
-/* 商品展示区域 */
-.bottom-section {
-  margin-top: 0;
-}
-
+/* ---------- 商品列表 ---------- */
 .product-list-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding: 0 4px;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .header-left {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.2rem;
+}
+
+.product-list-title {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--color-text);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.product-count {
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
 }
 
 .layout-controls {
@@ -906,9 +834,10 @@ onBeforeUnmount(() => {
 
 .layout-toggle {
   display: flex;
-  background: var(--shop-filter-bg);
-  border-radius: 12px;
-  padding: 4px;
+  gap: 2px;
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  padding: 3px;
   border: 1px solid var(--color-border);
 }
 
@@ -916,192 +845,119 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border: none;
-  border-radius: 8px;
+  border-radius: calc(var(--radius-md) - 3px);
   background: transparent;
-  color: var(--shop-text-muted);
+  color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .layout-btn:hover {
-  background: rgba(34, 139, 34, 0.1);
-  color: #134e13;
-  transform: scale(1.05);
+  color: var(--color-text);
 }
 
 .layout-btn.active {
-  background: linear-gradient(135deg, #134e13 0%, #0d3d0d 100%);
-  color: white;
+  background: var(--surface-1);
+  color: var(--accent);
+  box-shadow: var(--shadow-xs);
 }
 
-.layout-btn.active:hover {
-  transform: scale(1.05);
-}
-
-.product-list-title {
-  margin: 0;
-  font-size: 28px;
-  color: var(--color-text);
-  font-weight: 900;
-  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
-  position: relative;
-}
-
-.product-list-title::after {
-  content: '';
-  position: absolute;
-  bottom: -5px;
-  left: 0;
-  width: 60px;
-  height: 3px;
-  background: var(--color-text);
-  border-radius: 2px;
-}
-
-.product-count {
-  color: var(--color-text);
-  font-size: 14px;
-  background: var(--shop-card-bg);
-  padding: 8px 16px;
-  border-radius: 25px;
-  border: 1px solid var(--color-border);
-  font-weight: 600;
-}
-
-/* 空状态样式 */
-.empty-product-list,
-.empty-filter-results {
-  text-align: center;
-  padding: 60px 20px;
-  background: var(--shop-section-bg);
-  border-radius: 16px;
-  box-shadow: 0 4px 15px var(--color-post-card-box-shadow);
-  margin: 20px 0;
-}
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 20px;
-  opacity: 0.6;
-}
-
-.empty-product-list h3,
-.empty-filter-results h3 {
-  font-size: 20px;
-  color: var(--color-text);
-  margin-bottom: 12px;
-  font-weight: 600;
-}
-
-.empty-product-list p,
-.empty-filter-results p {
-  color: var(--shop-text-muted);
-  margin-bottom: 24px;
-  line-height: 1.5;
-}
-
+/* 空状态内的清除筛选按钮 */
 .clear-filter-btn {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #4c8baf 0%, #81b3e9 100%);
-  color: white;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  background: var(--accent);
+  color: var(--accent-foreground);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
+  font-size: 0.875rem;
+  transition: background-color 0.2s ease;
 }
 
 .clear-filter-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(76, 139, 175, 0.3);
+  background: var(--accent-hover);
 }
 
-/* 商品列表容器 */
 .product-list-wrapper {
-  min-height: 300px; /* 设置一个最小高度，防止内容为空时区域骤缩 */
+  min-height: 300px; /* 防止内容为空时区域骤缩 */
 }
 
 .product-list {
   display: grid;
-  gap: 20px;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 1rem;
 }
 
-/* 网格布局（竖排） */
 .product-list.grid-layout {
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
 }
 
-/* 列表布局（横排） */
 .product-list.list-layout {
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: 0.75rem;
 }
 
-/* 大屏幕布局 */
-@media (min-width: 1300px) {
-  .product-list.grid-layout {
-    grid-template-columns: repeat(6, 1fr);
-  }
-}
-
-/* 中等屏幕布局 */
-@media (min-width: 1000px) and (max-width: 1299px) {
+/* 超宽屏限制 4 列，避免卡片过窄 */
+@media screen and (min-width: 1300px) {
   .product-list.grid-layout {
     grid-template-columns: repeat(4, 1fr);
   }
 }
 
-/* 小屏幕布局 */
-@media (min-width: 600px) and (max-width: 999px) {
+/* 移动端单列 */
+@media screen and (max-width: 600px) {
   .product-list.grid-layout {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* 超小屏幕布局 */
-@media (min-width: 576px) and (max-width: 599px) {
-  .product-list.grid-layout {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* 移动端布局 */
-@media (max-width: 575px) {
-  .product-list.grid-layout {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .product-list.list-layout {
     grid-template-columns: 1fr;
   }
+}
 
-  .layout-controls {
-    display: none; /* 移动端隐藏布局切换按钮 */
+/* ---------- 响应式：移动端 ---------- */
+@media (max-width: 767px) {
+  .skeleton-top-section {
+    flex-direction: column;
+  }
+
+  .skeleton-carousel {
+    height: 170px;
+  }
+
+  .skeleton-filter {
+    width: 100%;
+    height: 120px;
+  }
+
+  .top-section {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .carousel {
+    height: 170px;
+  }
+
+  .carousel-overlay {
+    padding: 1rem 0.9rem 0.8rem;
+  }
+
+  .filter-container {
+    width: 100%;
   }
 
   .product-list-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
+    align-items: center;
   }
-}
 
-/* 空商品列表提示 */
-.empty-product-list {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 300px;
-  color: #666;
-  text-align: center;
-}
-
-.empty-product-list p {
-  font-size: 18px;
+  .layout-controls {
+    display: none; /* 移动端隐藏布局切换，统一单列 */
+  }
 }
 </style>

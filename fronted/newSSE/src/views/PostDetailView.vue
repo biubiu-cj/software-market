@@ -17,6 +17,7 @@ import { useNewPostsStore } from '@/store/newPostsStore'
 import { usePostStore } from '@/store/postStore'
 import { strHandler } from '@/utils/strHandler'
 import { setTitle } from '@/utils/title'
+
 const { removeNewPostId } = useNewPostsStore()
 
 const CommentCard = defineAsyncComponent(() => import('@/components/card/CommentCard.vue'))
@@ -206,34 +207,34 @@ onMounted(async () => {
     </div>
     <div class="mt-5 h-a w-full">
       <div class="mb-3 flex items-center justify-between">
-        <h2 class="m-2">
+        <h2 class="comment-heading">
           评论
         </h2>
-        <div class="flex flex-row gap-2">
-          <div
-            class="sort-btn max-w-30 min-w-25 w-20vw flex cursor-pointer items-center justify-center rounded-1 bg-[#f5f5f5] px-1 py-3 font-500 transition-all duration-300 ease"
-            hover="bg-[#e8d5c4]"
-            active="bg-[#d0b5a0] scale-98"
+        <div class="sort-toggle">
+          <button
+            type="button"
+            class="sort-btn"
+            :class="{ active: sortType === 'time' }"
             @click="setSortType('time')"
           >
-            <div
-              class="mr-1 h-8 w-8 bg-contain bg-no-repeat"
-              style="background-image: url(/images/icons8-sort-48.png);"
-            />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
             时间
-          </div>
-          <div
-            class="sort-btn max-w-30 min-w-25 w-20vw flex cursor-pointer items-center justify-center rounded-1 bg-[#f5f5f5] px-1 py-3 font-500 transition-all duration-300 ease"
-            hover="bg-[#e8d5c4]"
-            active="bg-[#d0b5a0] scale-98"
+          </button>
+          <button
+            type="button"
+            class="sort-btn"
+            :class="{ active: sortType === 'likes' }"
             @click="setSortType('likes')"
           >
-            <div
-              class="mr-1 h-8 w-8 bg-contain bg-no-repeat"
-              style="background-image: url(/images/icons8-sort-49.png);"
-            />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+              <polyline points="17 6 23 6 23 12" />
+            </svg>
             热度
-          </div>
+          </button>
         </div>
       </div>
       <!-- 这是评论区 -->
@@ -277,21 +278,57 @@ onMounted(async () => {
   color: var(--color-text);
 }
 
-.sort-btn {
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+.comment-heading {
+  margin: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
 }
 
-body.dark-mode .sort-btn {
-  background-color: var(--color-bg);
-  border: 1px solid whitesmoke;
-  box-shadow: var(--color-post-card-hover-box-shadow) 0px 2px 7px;
+.sort-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
-body.dark-mode .sort-btn:hover {
-  background-color: #2c2c2c;
-  color: white;
+
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 34px;
+  padding: 0 0.9rem;
+  margin: 0;
+  border: none;
+  border-radius: calc(var(--radius-md) - 3px);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
 }
-body.dark-mode .sort-btn:active {
-  background-color: #444;
+
+.sort-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.sort-btn:hover {
+  color: var(--color-text);
+  background: transparent;
+}
+
+.sort-btn.active {
+  background: var(--surface-1);
+  color: var(--accent);
+  box-shadow: var(--shadow-xs);
 }
 </style>

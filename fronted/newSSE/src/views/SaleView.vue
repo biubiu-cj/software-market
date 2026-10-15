@@ -180,10 +180,10 @@ function cancelPublish(): void {
 </script>
 
 <template>
-  <div class="product-publish-container page-section">
-    <div class="publish-header">
-      <h1>发布新商品</h1>
-    </div>
+  <div class="product-publish-container">
+    <h2 class="page-heading">
+      发布新商品
+    </h2>
 
     <form class="product-form" @submit.prevent="submitProduct">
       <div class="form-row">
@@ -229,8 +229,8 @@ function cancelPublish(): void {
           >
             <img :src="image" alt="预览图" class="preview-image">
             <div class="image-actions">
-              <button type="button" class="delete-image" @click.stop="deleteImage(index)">
-                删除
+              <button type="button" class="delete-image" aria-label="删除图片" title="删除图片" @click.stop="deleteImage(index)">
+                ×
               </button>
             </div>
           </div>
@@ -249,7 +249,10 @@ function cancelPublish(): void {
               @change="handleFiles"
             >
             <div class="upload-button">
-              <i class="upload-icon">+</i>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
               <span>添加图片</span>
             </div>
           </div>
@@ -280,7 +283,7 @@ function cancelPublish(): void {
           取消
         </button>
         <button type="submit" class="publish-btn" :disabled="isSubmitting">
-          发布商品
+          {{ isSubmitting ? '发布中…' : '发布商品' }}
         </button>
       </div>
     </form>
@@ -289,96 +292,76 @@ function cancelPublish(): void {
 
 <style scoped>
 .product-publish-container {
-  max-width: 1000px;
+  width: 100%;
+  max-width: 46rem;
   margin: 0 auto;
-  padding: 20px;
-  background: var(--color-bg);
-  min-height: 100vh;
-}
-
-.publish-header {
-  text-align: center;
-  margin-bottom: 40px;
-  padding: 30px;
-  background: var(--shop-section-bg);
-  border-radius: 16px;
-  box-shadow: 0 8px 30px var(--color-post-card-box-shadow);
-  backdrop-filter: blur(10px);
-}
-
-.publish-header h1 {
-  font-size: 32px;
-  color: var(--color-text);
-  font-weight: 700;
-  margin: 0;
-  background: linear-gradient(135deg, var(--color-info), #81b3e9);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  padding-bottom: 1rem;
 }
 
 .product-form {
-  background: var(--shop-section-bg);
-  border-radius: 16px;
-  box-shadow: 0 8px 30px var(--color-post-card-box-shadow);
-  padding: 40px;
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: clamp(1.25rem, 3vw, 2rem);
   border: 1px solid var(--color-border);
-  position: relative;
-}
-
-.product-form::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #4c8baf, #81b3e9, #4c8baf);
-  border-radius: 16px 16px 0 0;
 }
 
 .form-row {
   display: flex;
-  gap: 20px;
-  margin-bottom: 25px;
+  gap: 1.25rem;
 }
 
 .form-group {
-  margin-bottom: 25px;
+  margin-bottom: 1.25rem;
 }
 
 .flex-1 {
   flex: 1;
+  min-width: 0;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 0.5rem;
   font-weight: 600;
   color: var(--color-text);
-  font-size: 16px;
+  font-size: 0.9rem;
 }
 
 .form-group input,
 .form-group textarea {
   width: 100%;
-  padding: 16px;
-  border: 2px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 16px;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-family: var(--font-sans);
   box-sizing: border-box;
-  transition: all 0.3s ease;
-  background: var(--shop-filter-bg);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+  background: var(--surface-2);
   color: var(--color-text);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 8rem;
+  line-height: 1.6;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--color-text-secondary);
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: var(--color-info);
-  background: var(--shop-filter-bg);
-  box-shadow: 0 0 0 3px var(--color-hover);
-  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: var(--surface-1);
+  box-shadow: 0 0 0 3px var(--accent-muted);
 }
 
 .form-group input.error,
@@ -388,37 +371,40 @@ function cancelPublish(): void {
 
 .error-message {
   color: var(--color-error);
-  font-size: 14px;
-  margin-top: 5px;
+  font-size: 0.82rem;
+  margin-top: 0.35rem;
 }
 
 .images-upload-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
-  border: 2px dashed var(--color-info);
-  border-radius: 12px;
-  padding: 20px;
-  min-height: 180px;
-  background: var(--shop-skeleton-bg);
-  transition: all 0.3s ease;
+  gap: 0.85rem;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  min-height: 150px;
+  background: var(--surface-2);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .images-upload-container:hover {
-  border-color: var(--color-info);
-  background: var(--shop-filter-bg);
+  border-color: var(--accent);
 }
 
 .image-upload-wrapper {
   position: relative;
-  width: 150px;
+  width: 128px;
+  height: 128px;
 }
 
 .preview-image {
   width: 100%;
-  height: 150px;
+  height: 100%;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
 }
 
 .image-actions {
@@ -428,100 +414,124 @@ function cancelPublish(): void {
 }
 
 .delete-image {
-  background-color: rgba(229, 57, 53, 0.8);
-  color: white;
-  border: none;
-  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 24px;
   height: 24px;
-  font-size: 12px;
+  margin: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 15px;
+  line-height: 1;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+.delete-image:hover {
+  background-color: var(--color-error);
 }
 
 .upload-button-wrapper {
-  width: 150px;
-  height: 150px;
+  width: 128px;
+  height: 128px;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: var(--shop-filter-bg);
-  border-radius: 12px;
+  background: var(--surface-1);
+  border-radius: var(--radius-md);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: all 0.3s ease;
-  border: 2px dashed var(--color-info);
-  color: var(--color-text);
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
+  border: 1.5px dashed var(--color-border);
+  color: var(--color-text-secondary);
 }
 
 .upload-button-wrapper:hover {
-  background: var(--shop-section-bg);
-  border-color: var(--color-info);
-  transform: scale(1.05);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .upload-button {
-  text-align: center;
-  color: var(--color-text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
 }
 
-.upload-icon {
-  font-size: 24px;
-  margin-bottom: 8px;
-  display: block;
+.upload-button svg {
+  width: 22px;
+  height: 22px;
 }
 
 .form-actions {
   display: flex;
-  justify-content: center; /* 居中对齐按钮 */
-  gap: 15px;
-  margin-top: 30px;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
 }
 
 .cancel-btn {
-  padding: 16px 32px;
-  background: var(--shop-filter-bg);
-  border: 2px solid var(--color-border);
-  border-radius: 8px;
+  min-height: 44px;
+  padding: 0 1.5rem;
+  background: var(--surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 500;
   color: var(--color-text);
-  transition: all 0.3s ease;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .cancel-btn:hover {
-  background: var(--shop-section-bg);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px var(--color-post-card-box-shadow);
+  background: var(--surface-2);
 }
 
 .publish-btn {
-  padding: 16px 32px;
-  background: linear-gradient(135deg, #4c8baf 0%, #81b3e9 100%);
-  color: white;
+  min-height: 44px;
+  padding: 0 1.75rem;
+  background: var(--accent);
+  color: var(--accent-foreground);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  font-size: 16px;
+  font-size: 0.95rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(76, 139, 175, 0.3);
+  transition: background-color 0.2s ease;
 }
 
-.publish-btn:hover {
-  background: linear-gradient(135deg, #3a6b8a 0%, #6a9bc7 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(76, 139, 175, 0.4);
+.publish-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
 }
 
 .publish-btn:disabled {
-  background-color: var(--shop-text-muted);
+  background-color: var(--surface-2);
+  color: var(--color-text-secondary);
   cursor: not-allowed;
-  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+  }
+
+  .form-actions button {
+    flex: 1;
+  }
 }
 </style>

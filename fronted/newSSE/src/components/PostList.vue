@@ -71,7 +71,7 @@ onUnmounted(() => {
       :is="cardComponent"
       v-for="post in posts"
       :key="post.PostID"
-      class="mx-a my-3 w-15/16"
+      class="mb-3 w-full"
       :is-dense="isDense"
       :is-new="newPostIds.includes(post.PostID)"
       :post="post"
@@ -81,16 +81,24 @@ onUnmounted(() => {
       <div
         v-if="!isLoading"
         ref="bottom"
-        class="bottomDiv"
+        class="list-hint"
       >
-        loading...
+        <span class="spinner" aria-hidden="true" />
+        加载中…
       </div>
     </template>
     <template v-else>
-      <div class="bottomDiv">
-        暂无更多
+      <div v-if="posts.length > 0" class="list-hint">
+        已经到底啦
       </div>
     </template>
+    <div v-if="!isLoading && !hasMore && posts.length === 0" class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+      <h3>这里还什么都没有</h3>
+      <p>{{ postType === 'rating' ? '还没有打分内容，去发一条吧' : '换个分区或稍后再来看看' }}</p>
+    </div>
   </div>
 </template>
 
@@ -103,9 +111,5 @@ onUnmounted(() => {
 .list-enter-from,
 .list-leave-to {
   opacity: 0;
-}
-
-.bottomDiv {
-  text-align: center;
 }
 </style>

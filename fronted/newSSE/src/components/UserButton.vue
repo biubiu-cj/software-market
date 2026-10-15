@@ -15,26 +15,33 @@ function handleDelete() {
 </script>
 
 <template>
-  <div class="userButtons ml-a mt-0 h-fit flex flex-row">
+  <div class="userButtons ml-a mt-0 h-fit flex flex-row items-center">
     <button
       v-if="!noSave"
-      style="background-color: transparent; border: none;"
+      type="button"
+      class="icon-btn"
+      :class="{ saved: isSaved }"
+      :title="isSaved ? '取消收藏' : '收藏'"
+      :aria-label="isSaved ? '取消收藏' : '收藏'"
       @click.stop.prevent="handleSave"
     >
-      <div
-        class="icon h-7 w-7 bg-cover bg-no-repeat"
-        :style="{
-          backgroundImage:
-            'url(\'https://img.icons8.com/?size=100&id=103&format=png&color=000000\')',
-          filter: isSaved
-            ? 'brightness(0) saturate(100%) invert(22%) sepia(92%) saturate(7473%) hue-rotate(354deg) brightness(95%) contrast(104%)'
-            : '',
-        }"
-      />
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+      </svg>
     </button>
 
     <button
       v-if="isSelf && showDelete"
+      type="button"
+      class="delete-btn"
       @click.stop.prevent="handleDelete"
     >
       删除
@@ -43,11 +50,37 @@ function handleDelete() {
 </template>
 
 <style lang="scss">
-body.dark-mode {
-  .userButtons {
-    .icon {
-      filter: invert(1);
+.userButtons {
+  gap: 4px;
+
+  .icon-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .icon-btn.saved {
+    color: var(--accent);
+
+    svg {
+      fill: var(--accent-muted);
     }
+  }
+
+  .delete-btn {
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .delete-btn:hover {
+    color: var(--color-error);
+    border-color: color-mix(in srgb, var(--color-error) 45%, transparent);
+    background: color-mix(in srgb, var(--color-error) 8%, transparent);
   }
 }
 </style>

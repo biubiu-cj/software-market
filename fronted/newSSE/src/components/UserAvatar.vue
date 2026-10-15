@@ -32,7 +32,7 @@ function navigate() {
         class="user-avatar-img"
         :src="src || defaultAvatar"
         loading="lazy"
-        :alt="userId.toString()"
+        :alt="userName ? `${userName}的头像` : '用户头像'"
       >
       <UserIdentityIcon :identity="userIdentity" />
     </div>
@@ -72,7 +72,8 @@ function navigate() {
       width: var(--userImage);
       height: var(--userImage);
       border-radius: 50%;
-      background: #fff;
+      background: var(--surface-2);
+      border: 1px solid var(--color-border);
     }
   }
 }

@@ -20,7 +20,7 @@ function sendPartition(p: string) {
 </script>
 
 <template>
-  <div class="partition-page page-section">
+  <div class="page-section partition-page">
     <h2 class="page-heading">
       选择分区
     </h2>
@@ -130,22 +130,23 @@ function sendPartition(p: string) {
 .partition-card-btn {
   margin-top: auto;
   align-self: flex-start;
-  padding: 0.5rem 1rem;
+  min-height: 38px;
+  padding: 0.5rem 1.1rem;
   border-radius: var(--radius-md);
   border: none;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  background: var(--accent);
   color: var(--accent-foreground) !important;
   box-shadow: var(--shadow-xs);
   transition:
-    filter 0.2s ease,
+    background-color 0.2s ease,
     transform 0.15s ease;
 }
 
 .partition-card-btn:hover {
-  filter: brightness(1.06);
+  background: var(--accent-hover);
   transform: translateY(-1px);
 }
 

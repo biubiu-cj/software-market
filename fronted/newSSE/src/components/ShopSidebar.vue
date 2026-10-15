@@ -8,99 +8,90 @@ const IsMain = computed(() => {
   return /^\/shop\/?$/.test(route.fullPath)
 })
 const { userInfo } = useUserStore()
+const defaultAvatar = `${import.meta.env.BASE_URL}default-avatar.svg`
 </script>
 
 <template>
-  <div class="container">
-    <!-- 侧边栏部分 -->
-    <div class="sidebar">
-      <!-- 用户信息部分 -->
-      <div class="user-info">
-        <div class="avatar-container">
-          <img :src="userInfo.avatarURL" alt="用户头像" class="avatar">
-        </div>
-        <div class="user-id">
-          {{ userInfo.name }}
-        </div>
+  <aside class="shop-sidebar" aria-label="商城侧边导航">
+    <!-- 用户信息 -->
+    <div class="user-info">
+      <div class="avatar-container">
+        <img :src="userInfo.avatarURL || defaultAvatar" :alt="userInfo.name ? `${userInfo.name}的头像` : '用户头像'" class="avatar">
       </div>
-
-      <!-- 导航按钮部分 -->
-      <div class="navigation-buttons">
-        <RouterLink v-if="IsMain" to="/shop/myproducts" class="nav-button">
-          <span class="nav-text">商品</span>
-        </RouterLink>
-        <RouterLink v-else to="/shop" class="nav-button">
-          <span class="nav-text">返回首页</span>
-        </RouterLink>
-        <RouterLink to="/chat" class="nav-button">
-          <span class="nav-text">消息</span>
-        </RouterLink>
-        <RouterLink to="/shop/sale" class="nav-button">
-          <span class="nav-text">出售</span>
-        </RouterLink>
-        <RouterLink to="/" class="nav-button home-button">
-          <span class="nav-text">主页</span>
-        </RouterLink>
+      <div class="user-id">
+        {{ userInfo.name }}
       </div>
     </div>
-  </div>
+
+    <!-- 导航 -->
+    <nav class="navigation-buttons">
+      <RouterLink v-if="IsMain" to="/shop/myproducts" class="nav-button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <path d="M16 10a4 4 0 0 1-8 0" />
+        </svg>
+        <span class="nav-text">商品</span>
+      </RouterLink>
+      <RouterLink v-else to="/shop" class="nav-button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5" />
+          <polyline points="12 19 5 12 12 5" />
+        </svg>
+        <span class="nav-text">返回首页</span>
+      </RouterLink>
+      <RouterLink to="/chat" class="nav-button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+        <span class="nav-text">消息</span>
+      </RouterLink>
+      <RouterLink to="/shop/sale" class="nav-button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        </svg>
+        <span class="nav-text">出售</span>
+      </RouterLink>
+      <RouterLink to="/" class="nav-button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        <span class="nav-text">主页</span>
+      </RouterLink>
+    </nav>
+  </aside>
 </template>
 
 <style scoped>
-.sidebar {
+.shop-sidebar {
   width: 200px;
-  background-image: url('/img/4.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  padding: 20px 0;
-  box-shadow: 4px 0 20px var(--color-post-card-box-shadow);
-  border-radius: 0 20px 20px 0;
-  position: relative;
-  min-height: 100vh;
-}
-
-.sidebar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 0 20px 20px 0;
-  z-index: 1;
-}
-
-.sidebar > * {
-  position: relative;
-  z-index: 2;
+  flex-shrink: 0;
+  padding: 1.1rem 0.85rem;
+  background: var(--surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .user-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 30px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 20px;
+  gap: 0.5rem;
+  padding: 0.5rem 0.5rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 0.85rem;
 }
 
 .avatar-container {
-  width: 80px;
-  height: 80px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   overflow: hidden;
-  margin-bottom: 15px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 4px 15px var(--color-post-card-box-shadow);
-  transition: all 0.3s ease;
-}
-
-.avatar-container:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 25px var(--color-post-card-hover-box-shadow);
-  border-color: rgba(255, 255, 255, 0.5);
+  border: 2px solid var(--color-border);
+  background: var(--surface-2);
 }
 
 .avatar {
@@ -110,136 +101,69 @@ const { userInfo } = useUserStore()
 }
 
 .user-id {
-  font-size: 16px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: white;
-  text-align: center;
-  line-height: 1.3;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: var(--color-text);
 }
 
 .navigation-buttons {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 0 20px;
+  gap: 4px;
 }
 
 .nav-button {
-  width: 100%;
-  height: 50px;
-  border: none;
-  border-radius: 12px;
-  background: var(--shop-card-bg);
-  color: var(--color-text);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0 15px;
+  gap: 0.6rem;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 500;
   text-decoration: none;
-  box-shadow: 0 2px 10px var(--color-post-card-box-shadow);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.nav-button svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  transition: color 0.2s ease;
 }
 
 .nav-button:hover {
-  background: var(--shop-card-bg);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px var(--color-post-card-hover-box-shadow);
+  background: var(--color-hover);
+}
+
+.nav-button:hover svg {
+  color: var(--color-text);
 }
 
 .nav-button.router-link-active {
-  background: linear-gradient(135deg, var(--color-info) 0%, #2980b9 100%);
-  color: white;
-  box-shadow: 0 4px 15px var(--color-hover);
+  background: var(--accent-muted);
+  color: var(--color-link);
+}
+
+.nav-button.router-link-active svg {
+  color: var(--color-link);
 }
 
 .nav-text {
-  font-size: 14px;
-  font-weight: 500;
-  text-align: center;
-}
-
-.home-button {
-  background: var(--shop-card-bg) !important;
-  color: var(--color-text) !important;
-  box-shadow: 0 2px 10px var(--color-post-card-box-shadow) !important;
-}
-
-.home-button:hover {
-  background: var(--shop-section-bg) !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px var(--color-post-card-hover-box-shadow) !important;
-}
-
-.home-button.router-link-active {
-  background: var(--shop-card-bg) !important;
-  color: var(--color-text) !important;
-  box-shadow: 0 4px 15px var(--color-post-card-hover-box-shadow) !important;
-}
-
-.notification-badge {
-  position: absolute;
-  right: 15px;
-  background-color: var(--color-error);
-  color: white;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  height: fit-content;
-}
-
-.main-content {
   flex: 1;
-  padding: 20px;
-}
-
-@media (min-width: 1000px) {
-  .sidebar {
-    width: 220px;
-  }
-
-  .avatar-container {
-    width: 90px;
-    height: 90px;
-  }
-
-  .user-id {
-    font-size: 18px;
-  }
-
-  .nav-text {
-    font-size: 15px;
-  }
 }
 
 @media (max-width: 768px) {
-  .sidebar {
+  .shop-sidebar {
     width: 180px;
-    border-radius: 0 15px 15px 0;
-  }
-
-  .avatar-container {
-    width: 70px;
-    height: 70px;
-  }
-
-  .user-id {
-    font-size: 14px;
-  }
-
-  .nav-button {
-    height: 45px;
-    padding: 0 12px;
-  }
-
-  .nav-text {
-    font-size: 13px;
   }
 }
 </style>

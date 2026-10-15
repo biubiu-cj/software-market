@@ -1,12 +1,12 @@
 <!-- eslint-disable vue/html-self-closing -->
 <script setup lang="ts">
-import type { AllInfo } from '@/api/info/getInfo'
 import type { Ref } from 'vue'
+import type { AllInfo } from '@/api/info/getInfo'
 import { inject, onMounted, ref, useTemplateRef } from 'vue'
 
 import { useRouter } from 'vue-router'
 import { getInfoById } from '@/api/info/getInfo'
-import { updateEmailPush, updateUserInfo, uploadAvatar, deleteAccount } from '@/api/info/updateInfo'
+import { deleteAccount, updateEmailPush, updateUserInfo, uploadAvatar } from '@/api/info/updateInfo'
 
 import { updatePassword } from '@/api/LoginAndRegister/forgetPwd'
 import { sendCode } from '@/api/LoginAndRegister/utils'
@@ -209,113 +209,160 @@ async function deleteAccountFunc() {
     <h2 class="page-heading">
       设置
     </h2>
-    <div class="data">
-      <h3>个人信息</h3>
-      <img :src="allInfo?.avatarURL" alt="头像" style="margin: auto">
-      <label for="fileInput" class="button custom-file-label fileInput">修改头像</label>
-      <input id="fileInput" type="file" accept="image/*" style="display: none" @change="uploadAvatarFunc">
-      <div>
-        <div>
-          <div class="user-basic-info info-form">
-            <div class="user-details">
-              <p><strong>ID：</strong>{{ allInfo?.userID }}</p>
-              <p><strong>邮箱：</strong>{{ allInfo?.email }}</p>
-              <p><strong>经验：</strong></p>
-              <div class="exp-container">
-                <span class="level" :class="levelClassHandler(allInfo?.score || 0)">{{ levelNameHandler(allInfo?.score || 0) }}
-                </span>
-                <div class="progress-container">
-                  <div
-                    class="progress-bar" :style="{
-                      width:
-                        `${((allInfo?.score || 0)
-                          / parseInt(
-                            levelExpHandler(
-                              allInfo?.score || 0,
-                            ),
-                          ))
-                          * 100
-                        }%`,
-                      background:
-                        'linear-gradient(to right, #ff9999, #ff4d4d)',
-                    }"
-                  />
-                </div>
-                {{ allInfo?.score }} /{{
-                  levelExpHandler(allInfo?.score || 0)
-                }}
-                <span class="level level-next">{{
-                  levelNameHandler(
-                    parseInt(levelExpHandler(allInfo?.score || 0)),
-                  )
-                }}
-                </span>
-              </div>
-            </div>
+
+    <!-- 个人信息 -->
+    <section class="panel">
+      <h3 class="panel-title">
+        个人信息
+      </h3>
+      <div class="avatar-row">
+        <img :src="allInfo?.avatarURL" alt="用户头像" class="avatar-img">
+        <label for="fileInput" class="fileInput avatar-upload-btn">修改头像</label>
+        <input id="fileInput" type="file" accept="image/*" style="display: none" @change="uploadAvatarFunc">
+      </div>
+
+      <div class="user-details">
+        <p><strong>ID：</strong>{{ allInfo?.userID }}</p>
+        <p><strong>邮箱：</strong>{{ allInfo?.email }}</p>
+        <div class="exp-row">
+          <strong>经验：</strong>
+          <span class="level" :class="levelClassHandler(allInfo?.score || 0)">{{ levelNameHandler(allInfo?.score || 0) }}
+          </span>
+          <div class="progress-container">
+            <div
+              class="progress-bar" :style="{
+                width:
+                  `${((allInfo?.score || 0)
+                    / parseInt(
+                      levelExpHandler(
+                        allInfo?.score || 0,
+                      ),
+                    ))
+                    * 100
+                  }%`,
+              }"
+            />
           </div>
+          <span class="exp-text">
+            {{ allInfo?.score }} / {{ levelExpHandler(allInfo?.score || 0) }}
+          </span>
+          <span class="level level-next">{{
+            levelNameHandler(
+              parseInt(levelExpHandler(allInfo?.score || 0)),
+            )
+          }}
+          </span>
         </div>
-        <div class="info-form">
-          <div class="form-group">
-            <span>用户名</span>
-            <input v-model="allInfo.name" type="text">
-          </div>
-          <div class="form-group">
-            <span>简介</span>
-            <input v-model="allInfo.intro" type="text">
-          </div>
-          <button class="button" @click="updateUserInfoFunc">
-            修改信息
+      </div>
+
+      <div class="form-group">
+        <span>用户名</span>
+        <input v-model="allInfo.name" type="text">
+      </div>
+      <div class="form-group">
+        <span>简介</span>
+        <input v-model="allInfo.intro" type="text">
+      </div>
+      <button type="button" class="btn-primary btn-auto" @click="updateUserInfoFunc">
+        修改信息
+      </button>
+    </section>
+
+    <!-- 重置密码 -->
+    <section class="panel">
+      <h3 class="panel-title">
+        重置密码
+      </h3>
+      <div class="form-group">
+        <span>验证码</span>
+        <div class="inline-field">
+          <input ref="VCode" type="text" placeholder="请输入验证码">
+          <button type="button" class="btn-outline" @click="codeHandler">
+            发送验证码
           </button>
         </div>
       </div>
-      <div class="data form-group info-form">
-        <h3>重置密码</h3>
-        <input ref="VCode" type="text" placeholder="验证码">
-        <button class="button" @click="codeHandler">
+      <div class="form-group">
+        <span>新密码</span>
+        <input ref="password1" type="password" placeholder="请输入新密码">
+      </div>
+      <div class="form-group">
+        <span>确认密码</span>
+        <input ref="password2" type="password" placeholder="请再次输入新密码">
+      </div>
+      <button type="button" class="btn-primary btn-auto" @click="updatePasswordFunc">
+        重置密码
+      </button>
+    </section>
+
+    <!-- 偏好 -->
+    <section class="panel">
+      <h3 class="panel-title">
+        偏好
+      </h3>
+      <div class="toggle-container">
+        <span>启用邮件推送</span>
+        <div
+          class="toggle-switch"
+          :class="{ active: isPushDisabled }"
+          role="switch"
+          :aria-checked="!!isPushDisabled"
+          tabindex="0"
+          @click="togglePush"
+          @keydown.enter.prevent="togglePush"
+        >
+          <span class="slider" />
+        </div>
+      </div>
+      <div v-if="isPC" class="toggle-container">
+        <span>启用电脑端样式新体验</span>
+        <div
+          class="toggle-switch"
+          :class="{ active: pwaExperienceEnabled }"
+          role="switch"
+          :aria-checked="!!pwaExperienceEnabled"
+          tabindex="0"
+          @click="togglePWAExperience"
+          @keydown.enter.prevent="togglePWAExperience"
+        >
+          <span class="slider" />
+        </div>
+      </div>
+    </section>
+
+    <!-- 账号操作 -->
+    <section class="panel">
+      <h3 class="panel-title">
+        账号
+      </h3>
+      <div class="account-actions">
+        <button type="button" class="btn-outline" @click="router.push('/oauth2-apps')">
+          授权管理
+        </button>
+        <button type="button" class="btn-outline" @click="logout">
+          退出登录
+        </button>
+      </div>
+    </section>
+
+    <!-- 危险区 -->
+    <section class="panel danger-zone">
+      <h3 class="panel-title danger-title">
+        注销账户
+      </h3>
+      <p class="danger-hint">
+        此操作不可撤销，账户数据将被永久删除
+      </p>
+      <div class="danger-row">
+        <input v-model="deleteCode" type="text" placeholder="输入邮箱验证码">
+        <button type="button" class="btn-outline" @click="sendDeleteCode">
           发送验证码
         </button>
-        <input ref="password1" type="password" placeholder="密码">
-        <input ref="password2" type="password" placeholder="确认密码">
-        <button class="button" @click="updatePasswordFunc">
-          重置
-        </button>
-      </div>
-    </div>
-    <div class="toggle-container" style="display: flex; align-items: center; gap: 10px;">
-      <span>启用邮件推送</span>
-      <div class="toggle-switch" :class="{ active: isPushDisabled }" @click="togglePush">
-        <span class="slider" />
-      </div>
-    </div>
-    <div v-if="isPC" class="toggle-container" style="display: flex; align-items: center; gap: 10px;">
-      <span>启用电脑端样式新体验</span>
-      <div class="toggle-switch" :class="{ active: pwaExperienceEnabled }" @click="togglePWAExperience">
-        <span class="slider" />
-      </div>
-    </div>
-    <div class="data">
-      <button class="button" style="background-color: #0d9488" @click="router.push('/oauth2-apps')">
-        授权管理
-      </button>
-    </div>
-    <div class="data">
-      <button class="button" style="background-color: #ff4d4d" @click="logout">
-        退出登录
-      </button>
-    </div>
-    <div class="data" style="border-top: 1px solid var(--color-border, #ccc); padding-top: 20px;">
-      <h3 style="color: #ff4d4d;">注销账户</h3>
-      <p style="color: #999; font-size: 12px; margin-bottom: 10px;">此操作不可撤销，账户数据将被永久删除</p>
-      <input v-model="deleteCode" type="text" placeholder="输入邮箱验证码">
-      <div style="display: flex; gap: 10px; flex-direction: row;">
-        <button class="button" @click="sendDeleteCode">
-          发送验证码
-        </button>
-        <button class="button" style="background-color: #ff4d4d" @click="deleteAccountFunc">
+        <button type="button" class="solid btn-danger" @click="deleteAccountFunc">
           注销账户
         </button>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
@@ -323,92 +370,176 @@ async function deleteAccountFunc() {
 .root {
   color: var(--color-text);
   width: 100%;
-}
-
-.data {
+  max-width: 46rem;
+  margin-inline: auto;
   display: flex;
   flex-direction: column;
-  margin: 5%;
+  gap: 1rem;
 }
 
-.data div {
+.panel {
+  background: var(--surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem 1.35rem;
+}
+
+.panel-title {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.avatar-row {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
-.data div > * {
-  margin: 5px 0;
-}
-
-img {
-  width: 100px;
-  height: 100px;
+.avatar-img {
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface-2);
+  border: 1px solid var(--color-border);
 }
 
-.custom-file-label {
-  display: inline-block;
-  padding: 6px 12px;
+.avatar-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  min-height: 38px;
+  padding: 0 1rem;
+  margin: 0;
+  border: 1px solid var(--color-border) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  width: 100%;
-  height: auto;
-  border: none;
-  border-bottom: 1px solid #000;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
-input {
-  width: 100%;
-  height: 30px;
-  border: none;
-  border-bottom: 1px solid #000;
+.avatar-upload-btn:hover {
+  border-color: var(--accent) !important;
+  color: var(--accent);
+  background: var(--surface-1);
 }
 
-input[type='file'] {
-  height: auto;
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.1rem;
+  font-size: 0.9rem;
 }
 
-.exp-container {
+.user-details p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.user-details strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.exp-row {
   display: flex;
   flex-direction: row;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.exp-text {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 .progress-container {
-  width: 60%;
-  background-color: #ede7e79a;
-  border-radius: 20px;
+  flex: 1;
+  min-width: 120px;
+  max-width: 260px;
+  background-color: var(--surface-2);
+  border-radius: var(--radius-full);
   overflow: hidden;
-  height: 20px;
-  margin-top: 10px;
+  height: 8px;
 }
 
 .progress-bar {
   height: 100%;
-  border-radius: 20px;
-  transition: width 0.5s ease-in-out;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  transition: width 0.4s ease-in-out;
 }
 
-@media screen and (min-width: 768px) {
-  .root {
-    width: 40%;
-  }
-
-  .exp-container {
-    display: flex;
-    flex-direction: row !important;
-  }
+.form-group {
+  margin-bottom: 1rem;
 }
 
+.form-group > span {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.form-group input {
+  width: 100%;
+  min-height: 2.6rem;
+  padding: 0 0.85rem;
+  font-size: 0.95rem;
+  font-family: var(--font-sans);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--color-text);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-1);
+  box-shadow: 0 0 0 3px var(--accent-muted);
+}
+
+.inline-field {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.inline-field input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 未定义级别的等级样色（保留原有等级配色逻辑） */
 .level {
-  font-size: 1rem;
-  margin-left: 10px;
-  border-radius: 10%;
-  padding-left: 10px;
-  padding-right: 10px;
-  padding-top: 5px;
-  padding-bottom: 5px;
+  font-size: 0.85rem;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
 }
 
 .level-undefined {
@@ -419,24 +550,29 @@ input[type='file'] {
 
 .level-0 {
   background-color: #36c7d9;
+  color: #083344;
 }
 
 .level-1 {
   background-color: #66d934;
+  color: #14532d;
 }
 
 .level-2 {
   background-color: #d74a4a;
+  color: #fff;
 }
 
 .level-3 {
   background-color: rgb(240, 133, 39);
+  color: #fff;
 }
 
 .level-4 {
   background: linear-gradient(45deg, #ff7d7d, #ff5a99, #e376e5, #9a7ef8);
   background-size: 300% 300%;
   animation: change-color 5s ease infinite;
+  color: #fff;
 }
 
 .level-5 {
@@ -537,158 +673,166 @@ input[type='file'] {
   opacity: 0.25;
 }
 
+@keyframes change-color {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 .level-next {
-  background-color: #dddddd;
-  color: #8e8e8e;
+  background-color: var(--surface-2);
+  color: var(--color-text-secondary);
 }
 
-.user-info-container {
-  display: flex;
-  flex-direction: column;
-  background-color: #f9f9f9;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  padding: 20px;
-  width: 400px;
-  margin: 20px auto;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+/* 按钮 */
+.btn-auto {
+  width: auto;
+  margin-top: 0.25rem;
+  padding: 0 1.5rem;
 }
 
-.user-details {
-  margin-top: 10px;
-}
-
-.user-details p {
-  margin: 5px 0;
-}
-
-.info-form {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  margin: 20px auto;
-  padding: 20px;
-  background-color: #f9f9f9;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.form-group {
-  margin-bottom: 20px;
-  width: 100%;
-}
-
-.form-group span {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: #333;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.button {
-  width: 100%;
-  padding: 10px;
-  background-color: #24c6dc;
-  color: #fff;
-  font-size: 16px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background-color 0.3s ease;
-}
-
-.button:hover {
-  background-color: #20a0b0;
-}
-
-/* 夜间模式配色方案 */
-body.dark-mode .user-info-container {
-  background-color: #2e2e2e;
-  border: 1px solid #444;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-body.dark-mode .user-details p {
-  color: #f9f9f9;
-}
-
-body.dark-mode .info-form {
-  background-color: #2e2e2e;
-  border: 1px solid #444;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-body.dark-mode .form-group span {
-  color: #f9f9f9;
-}
-
-body.dark-mode .form-group input {
-  background-color: #444;
-  color: #f9f9f9;
-  border: 1px solid #666;
-}
-
-body.dark-mode .form-group input:focus {
-  border-color: #00bfff;
-  outline: none;
-  box-shadow: 0 0 5px rgba(0, 191, 255, 0.5);
-}
-
-body.dark-mode .button {
-  background-color: #ff8c00;
-  color: #fff;
-}
-
-body.dark-mode .button:hover {
-  background-color: #ffb74d;
-}
-
-.toggle-container {
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  min-height: 40px;
+  padding: 0 1.1rem;
+  margin: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-outline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--surface-1);
+}
+
+.btn-danger.solid {
+  border: 1px solid var(--color-error);
+  background: var(--color-error);
+  color: #fff;
+  min-height: 40px;
+  padding: 0 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.btn-danger.solid:hover {
+  background: color-mix(in srgb, var(--color-error) 85%, #000);
+  color: #fff;
+}
+
+/* 偏好开关 */
+.toggle-container {
   display: flex;
   align-items: center;
-  margin: 15px 0;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
 }
 
 .toggle-switch {
   position: relative;
-  width: 50px;
+  width: 46px;
   height: 26px;
-  background-color: #ccc;
-  border-radius: 13px;
+  flex-shrink: 0;
+  background-color: var(--color-border);
+  border-radius: var(--radius-full);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
+  transition: background-color 0.2s ease;
 }
 
 .slider {
   position: absolute;
-  width: 22px;
-  height: 22px;
-  background-color: white;
+  width: 20px;
+  height: 20px;
+  background-color: #fff;
   border-radius: 50%;
-  top: 2px;
-  left: 2px;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.toggle-switch.active .slider {
-  transform: translateX(26px);
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
 }
 
 .toggle-switch.active {
-  background-color: #2196f3;
+  background-color: var(--accent);
+}
+
+.toggle-switch.active .slider {
+  transform: translateX(20px);
+}
+
+/* 账号操作 */
+.account-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* 危险区 */
+.danger-zone {
+  border-color: color-mix(in srgb, var(--color-error) 30%, var(--color-border));
+}
+
+.danger-title {
+  color: var(--color-error);
+}
+
+.danger-hint {
+  margin: 0 0 0.9rem;
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+}
+
+.danger-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.danger-row input {
+  flex: 1;
+  min-width: 160px;
+  min-height: 2.6rem;
+  padding: 0 0.85rem;
+  font-size: 0.9rem;
+  font-family: var(--font-sans);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--color-text);
+}
+
+.danger-row input:focus {
+  outline: none;
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 15%, transparent);
+}
+
+@media screen and (min-width: 768px) {
+  .root {
+    width: 100%;
+  }
 }
 </style>

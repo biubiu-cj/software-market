@@ -16,6 +16,7 @@ defineProps<{
       v-for="img in strHandler('img', photos)"
       :key="img"
       :src="img"
+      alt="帖子图片"
     >
   </div>
 </template>

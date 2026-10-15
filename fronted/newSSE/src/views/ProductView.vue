@@ -178,7 +178,7 @@ function retryFetch(): void {
 // 图片错误处理
 function handleImageError(event: Event): void {
   const img = event.target as HTMLImageElement
-  img.src = 'https://via.placeholder.com/500x400?text=图片加载失败'
+  img.src = '/images/nophotos.png'
 }
 
 // 监听路由变化
@@ -198,18 +198,22 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="product-detail-container page-section">
+  <div class="product-detail-container">
     <!-- 加载状态 -->
     <div v-if="isLoading" class="loading-container">
       <div class="loading-spinner" />
-      <p>正在加载商品详情...</p>
+      <p>正在加载商品详情…</p>
     </div>
 
     <!-- 错误状态 -->
     <div v-else-if="error" class="error-container">
       <div class="error-content">
         <div class="error-icon">
-          ⚠️
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
         </div>
         <h3>加载失败</h3>
         <p>{{ error }}</p>
@@ -222,20 +226,23 @@ onMounted(() => {
     <!-- 商品详情内容 -->
     <template v-else>
       <!-- 返回按钮和操作按钮 -->
-      <div class="back-button-container">
+      <div class="top-bar">
         <button class="back-button" @click="goBack">
-          <img width="24" height="24" src="https://img.icons8.com/sf-black/24/return.png" alt="return">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 12H5" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
           <span>返回商城</span>
         </button>
 
-        <div v-if="isCurrentUser" class="action-buttons">
+        <div v-if="isCurrentUser" class="owner-actions">
           <button
             v-if="!product.isSold"
             class="sale-button"
             :disabled="isSelling"
             @click="saleProduct"
           >
-            <span v-if="isSelling">处理中...</span>
+            <span v-if="isSelling">处理中…</span>
             <span v-else>标记售出</span>
           </button>
 
@@ -244,7 +251,7 @@ onMounted(() => {
             :disabled="isDeleting"
             @click="deleteProduct"
           >
-            <span v-if="isDeleting">删除中...</span>
+            <span v-if="isDeleting">删除中…</span>
             <span v-else>删除商品</span>
           </button>
         </div>
@@ -258,7 +265,7 @@ onMounted(() => {
               <div v-for="(image, index) in product.photos" :key="`image-${index}`" class="carousel-item">
                 <img
                   :src="image"
-                  :alt="`商品图片 ${index + 1}`"
+                  :alt="`${product.name} - 商品图片 ${index + 1}`"
                   loading="lazy"
                   @error="handleImageError"
                 >
@@ -270,9 +277,10 @@ onMounted(() => {
               v-if="hasImages && product.photos.length > 1"
               class="carousel-control prev"
               aria-label="上一张"
+              title="上一张"
               @click="prevImage"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="15,18 9,12 15,6" />
               </svg>
             </button>
@@ -280,9 +288,10 @@ onMounted(() => {
               v-if="hasImages && product.photos.length > 1"
               class="carousel-control next"
               aria-label="下一张"
+              title="下一张"
               @click="nextImage"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9,18 15,12 9,6" />
               </svg>
             </button>
@@ -315,8 +324,11 @@ onMounted(() => {
 
         <div class="product-meta">
           <p class="product-seller">
-            <span class="seller-icon">👤</span>
-            卖家: {{ sellerName || product.seller || `用户${product.sellerId}` }}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            卖家：{{ sellerName || product.seller || `用户${product.sellerId}` }}
           </p>
           <div class="product-price-info">
             <span class="current-price">¥{{ product.price.toLocaleString() }}</span>
@@ -329,23 +341,31 @@ onMounted(() => {
         </div>
 
         <!-- 操作按钮 -->
-        <div class="action-buttons">
+        <div class="chat-actions">
           <button
             v-if="!isCurrentUser && canInteract"
-            class="chat-button primary"
+            class="primary chat-button"
             @click="chatWithSeller(false)"
           >
-            💬 私聊商家
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            私聊商家
           </button>
           <button
             v-if="!isCurrentUser && canInteract"
             class="chat-button secondary"
             @click="chatWithSeller(true)"
           >
-            🎭 匿名私聊
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            匿名私聊
           </button>
           <div v-if="!canInteract && !isCurrentUser" class="sold-notice">
-            <span class="notice-icon">⛔</span>
             此商品已售出，无法进行交易
           </div>
         </div>
@@ -358,49 +378,30 @@ onMounted(() => {
 .product-detail-container {
   display: flex;
   flex-direction: column;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  min-height: 100vh;
-  position: relative;
-  overflow-x: hidden;
+  width: 100%;
+  padding-top: 0.25rem;
+  min-height: 60vh;
 }
 
-.product-detail-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.product-detail-container > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* 加载和错误状态样式 */
+/* 加载与错误状态 */
 .loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 60vh;
-  padding: 40px;
-  color: var(--color-text);
+  gap: 0.75rem;
+  min-height: 50vh;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
 }
 
 .loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid var(--shop-skeleton-bg);
-  border-top: 4px solid var(--color-info);
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--accent);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 20px;
+  animation: spin 0.9s linear infinite;
 }
 
 @keyframes spin {
@@ -416,134 +417,153 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 60vh;
-  padding: 40px 20px;
+  min-height: 50vh;
+  padding: 2rem 1rem;
 }
 
 .error-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
   text-align: center;
-  background: var(--shop-section-bg);
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 8px 30px var(--color-post-card-box-shadow);
-  backdrop-filter: blur(10px);
+  background: var(--surface-1);
+  padding: 2.5rem 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
   max-width: 400px;
   color: var(--color-text);
 }
 
 .error-icon {
-  font-size: 48px;
-  margin-bottom: 20px;
+  color: var(--color-text-secondary);
+}
+
+.error-icon svg {
+  width: 40px;
+  height: 40px;
+  opacity: 0.5;
 }
 
 .error-content h3 {
-  font-size: 24px;
-  color: var(--color-error);
-  margin-bottom: 12px;
+  font-size: 1.1rem;
+  color: var(--color-text);
+  margin: 0;
   font-weight: 600;
 }
 
 .error-content p {
-  color: var(--shop-text-secondary);
-  margin-bottom: 24px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  font-size: 0.9rem;
   line-height: 1.5;
 }
 
 .retry-button {
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #4c8baf 0%, #81b3e9 100%);
-  color: white;
+  margin-top: 0.75rem;
+  padding: 0.55rem 1.5rem;
+  background: var(--accent);
+  color: var(--accent-foreground);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
 }
 
 .retry-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(76, 139, 175, 0.3);
+  background: var(--accent-hover);
 }
 
-/* 返回按钮和操作按钮样式 */
-.back-button-container {
+/* 顶部操作栏 */
+.top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding: 20px;
-  background: var(--shop-section-bg);
-  border-radius: 12px;
-  box-shadow: 0 4px 15px var(--color-post-card-box-shadow);
-  backdrop-filter: blur(10px);
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
 }
 
-.action-buttons {
+.owner-actions {
   display: flex;
-  gap: 12px;
+  gap: 0.6rem;
 }
 
 .back-button,
+.sale-button,
 .delete-button {
-  padding: 12px 20px;
-  background: var(--shop-card-bg);
-  border: 2px solid var(--color-border);
-  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 40px;
+  padding: 0 1rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
+  border: 1px solid var(--color-border);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   color: var(--color-text);
-  font-size: 16px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px var(--color-post-card-box-shadow);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.back-button svg {
+  width: 18px;
+  height: 18px;
 }
 
 .back-button:hover {
-  color: var(--color-info);
-  border-color: var(--color-info);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px var(--color-hover);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
-.delete-button:hover {
+.sale-button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-muted);
+}
+
+.delete-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-error) 55%, transparent);
   color: var(--color-error);
-  border-color: var(--color-error);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px var(--color-hover);
+  background: color-mix(in srgb, var(--color-error) 8%, transparent);
 }
 
-.back-button img,
-.delete-button img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
+.sale-button:disabled,
+.delete-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-/* 图片轮播样式 */
+/* 图片轮播 */
 .product-images-carousel {
   width: 100%;
-  margin-bottom: 30px;
+  margin-bottom: 1rem;
 }
 
 .carousel-container {
-  box-shadow: 0 8px 30px var(--color-post-card-box-shadow);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  background: var(--shop-card-bg);
+  background: var(--surface-2);
   border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
 .carousel {
   position: relative;
-  height: 500px;
+  height: clamp(240px, 38vw, 420px);
 }
 
 .carousel-inner {
   display: flex;
-  transition: transform 0.5s ease;
+  transition: transform 0.4s ease;
   height: 100%;
 }
 
@@ -558,142 +578,220 @@ onMounted(() => {
   object-fit: contain;
 }
 
-/* 轮播控制按钮 */
 .carousel-control {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  width: 40px;
-  height: 40px;
+  background: var(--surface-1);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  font-size: 18px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: var(--shadow-sm);
+  transition:
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.carousel-control:hover {
+  color: var(--accent);
+  box-shadow: var(--shadow-md);
 }
 
 .carousel-control.prev {
-  left: 15px;
+  left: 12px;
 }
 
 .carousel-control.next {
-  right: 15px;
+  right: 12px;
 }
 
-/* 轮播指示器 */
 .carousel-indicators {
   position: absolute;
-  bottom: 20px;
+  bottom: 12px;
   left: 0;
   right: 0;
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .indicator {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.5);
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: rgba(100, 116, 139, 0.4);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: all 0.25s ease;
 }
 
 .indicator.active {
-  background-color: white;
+  width: 20px;
+  background: var(--accent);
 }
 
-/* 商品信息样式 */
+/* 商品信息卡片 */
 .product-info {
-  background: var(--shop-section-bg);
-  padding: 40px;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px var(--color-post-card-box-shadow);
+  background: var(--surface-1);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
-  position: relative;
-  backdrop-filter: blur(20px);
-  overflow: hidden;
 }
 
-@keyframes shimmer {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
+.product-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .product-title {
-  margin-top: 0;
-  margin-bottom: 10px;
-  font-size: 28px;
+  margin: 0;
+  font-size: clamp(1.25rem, 2.5vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--color-text);
+  line-height: 1.35;
+}
+
+.sold-badge {
+  flex-shrink: 0;
+  margin-top: 0.3rem;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-hover);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.product-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.9rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .product-seller {
-  margin-bottom: 15px;
-  color: var(--shop-text-secondary);
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.product-seller svg {
+  width: 16px;
+  height: 16px;
 }
 
 .product-price-info {
   display: flex;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items: baseline;
 }
 
 .current-price {
-  font-size: 24px;
-  font-weight: bold;
-  color: var(--color-error);
-  margin-right: 10px;
-}
-
-.original-price {
-  font-size: 18px;
-  color: #999;
-  text-decoration: line-through;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-price);
 }
 
 .product-description {
-  margin-bottom: 30px;
-  line-height: 1.6;
+  margin-bottom: 1.25rem;
+  line-height: 1.7;
   color: var(--color-text);
 }
 
 .product-description h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: var(--color-text);
 }
 
 .product-description p {
-  color: var(--shop-text-muted);
+  margin: 0;
+  color: var(--color-text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-.action-buttons {
+.chat-actions {
   display: flex;
-  gap: 15px;
-  margin-top: 20px;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
 }
 
-.action-buttons button {
-  padding: 14px 24px;
-  border: none;
-  border-radius: 8px;
+.chat-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.4rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  font-size: 16px;
+  font-size: 0.95rem;
   font-weight: 600;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 4px 12px var(--color-post-card-box-shadow);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.chat-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.chat-button.primary {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: var(--accent-foreground);
+}
+
+.chat-button.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.chat-button.secondary {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.chat-button.secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-muted);
+}
+
+.sold-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0 1.1rem;
+  border-radius: var(--radius-md);
+  background: var(--color-hover);
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
 }
 </style>

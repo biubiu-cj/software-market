@@ -1,9 +1,16 @@
-/* 存放明亮模式和黑暗模式的颜色 */
-/* 子元素使用css变量 */
+/* 存放明亮模式和黑暗模式的颜色
+ * 子元素使用css变量（暗色模式为深蓝灰体系，不使用纯黑）
+ * 统一约定：
+ *   --color-text            主文字
+ *   --color-text-secondary  次级文字（说明、元信息、占位）
+ *   --color-border          边框
+ *   --surface-*             表面层级 0=页面底 / 1=卡片 / 2=内嵌控件
+ */
 
 body {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
@@ -13,159 +20,117 @@ body {
   --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
   --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
   --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.06);
-  --surface-0: #f8fafc;
+
+  /* 表面与主色 */
+  --surface-0: #f6f8fb;
   --surface-1: #ffffff;
-  --surface-2: #f1f5f9;
+  --surface-2: #eef2f7;
   --accent: #0d9488;
   --accent-hover: #0f766e;
-  --accent-foreground: #f0fdfa;
-  --accent-muted: rgba(13, 148, 136, 0.12);
-  --header-bg: rgba(255, 255, 255, 0.78);
+  --accent-foreground: #ffffff;
+  --accent-muted: rgba(13, 148, 136, 0.1);
+  --header-bg: rgba(255, 255, 255, 0.85);
   --header-border: rgba(15, 23, 42, 0.08);
-  --bottom-nav-bg: rgba(255, 255, 255, 0.92);
-  --auth-gradient: linear-gradient(135deg, #0f172a 0%, #134e4a 45%, #0d9488 100%);
+  --bottom-nav-bg: rgba(255, 255, 255, 0.94);
+  --auth-gradient: linear-gradient(150deg, #0f172a 0%, #115e59 60%, #0f766e 100%);
 
-  --color-bg: #f1f5f9;
+  /* 文字与背景 */
+  --color-bg: #f6f8fb;
   background-color: var(--color-bg);
-
-  --color-scroll: rgba(0, 0, 0, 0.1);
-  --color-scroll-thumb: rgba(0, 0, 0, 0.5);
-
-  --color-button-bg: #e2e8f0;
-  --color-button: #0f172a;
-
-  --color-text: #181818;
-  --color-hr: #3333339d;
-
+  --color-text: #172033;
+  --color-text-secondary: #64748b;
   --color-border: rgba(15, 23, 42, 0.1);
+  --color-hr: rgba(15, 23, 42, 0.12);
+  --color-link: #0d9488;
+  --color-link-hover: #0f766e;
+  --color-price: #0f766e;
 
-  --color-nav-bg: #f0f0f0;
-  --color-nav-hover: rgba(241, 236, 226, 0.901);
+  --color-scroll: rgba(15, 23, 42, 0.08);
+  --color-scroll-thumb: rgba(15, 23, 42, 0.25);
 
-  --color-ball-bg: #fffdfd;
-  --color-ball-text: #181818;
-  --color-ball-box-shadow: rgba(0, 0, 0, 0.35);
+  --color-button-bg: #eef2f7;
+  --color-button: #172033;
+  --color-hover: rgba(15, 23, 42, 0.05);
+  --color-active: rgba(15, 23, 42, 0.09);
+  --color-nav-hover: rgba(15, 23, 42, 0.06);
 
-  --color-selected-shadow-first: rgba(70, 70, 94, 0.25);
-  --color-selected-shadow-second: rgba(0, 0, 0, 0.3);
+  /* 业务状态色 */
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+  --color-info: #0ea5e9;
+  --color-warning: #d97706;
 
-  --color-hover: rgba(70, 70, 94, 0.1);
-  --color-active: rgba(0, 0, 0, 0.2);
+  /* 兼容旧变量名（引用面广，值统一到新体系） */
+  --color-primary: var(--accent);
+  --color-primary-hover: var(--accent-hover);
+  --color-background: var(--surface-1);
+  --color-user-text: var(--color-text);
+  --color-post-card-box-shadow: rgba(15, 23, 42, 0.08);
+  --color-post-card-hover-box-shadow: rgba(15, 23, 42, 0.16);
+  --color-level-undefined-box-shadow: rgba(30, 30, 30, 0.35);
 
-  --color-title-selected: #00a4af;
-  --color-title-bg: rgba(136, 243, 255, 0.683);
+  /* 私信 */
+  --chat-bg-main: #ffffff;
+  --chat-bg-highlight: #eef2f7;
+  --chat-text: #64748b;
+  --chat-text-tips: #64748b;
 
-  --color-to-post: white;
-  --color-to-post-bg: #a1a1a1e1;
-  --color-to-post-border: #333;
-
-  --color-a-in-post: #00d9ff;
-  --color-a-hover-in-post: #ffd900;
-  --color-a-hover-bg-in-post: #9cff817e;
-
-  --color-user-text: #333;
-  --color-user-avatar-bg: #6c757d;
-  --color-user-avatar: #fff;
-
-  --color-post-card-box-shadow: rgba(0, 0, 0, 0.24);
-  --color-post-card-hover-box-shadow: rgba(0, 0, 0, 0.35);
-
-  --color-level-undefined-box-shadow: #1e1e1eae;
-  --color-level-6-bg: #4545454e;
-
-  --chat-bg-main: #eee;
-  --chat-bg-highlight: #ddd;
-  --chat-text: #888;
-  --chat-text-tips: #383838;
-
-  --color-success: #4caf50;
-  --color-error: #f44336;
-  --color-info: #2196f3;
-  --color-warning: #ff9800;
-
-  /* 商城相关变量 */
+  /* 商城 */
   --shop-card-bg: #ffffff;
   --shop-section-bg: #ffffff;
   --shop-filter-bg: #ffffff;
-  --shop-text-secondary: #666;
-  --shop-text-muted: #7f8c8d;
-  --shop-skeleton-bg: #eee;
-
-  --color-link: #0d9488;
-  --color-link-hover: #0f766e;
+  --shop-text-secondary: #64748b;
+  --shop-text-muted: #94a3b8;
+  --shop-skeleton-bg: #edf1f6;
 }
 
 body.dark-mode {
   --surface-0: #0f172a;
   --surface-1: #1e293b;
   --surface-2: #334155;
-  --header-bg: rgba(15, 23, 42, 0.85);
-  --header-border: rgba(148, 163, 184, 0.12);
-  --bottom-nav-bg: rgba(30, 41, 59, 0.94);
-  --auth-gradient: linear-gradient(135deg, #020617 0%, #134e4a 50%, #115e59 100%);
-  --accent-muted: rgba(45, 212, 191, 0.15);
+  --accent-muted: rgba(45, 212, 191, 0.14);
+  --header-bg: rgba(15, 23, 42, 0.88);
+  --header-border: rgba(148, 163, 184, 0.14);
+  --bottom-nav-bg: rgba(30, 41, 59, 0.95);
+  --auth-gradient: linear-gradient(150deg, #020617 0%, #134e4a 55%, #0f766e 100%);
 
   --color-bg: #0f172a;
   background-color: var(--color-bg);
-
-  --color-scroll: rgba(255, 255, 255, 0.1);
-  --color-scroll-thumb: rgba(255, 255, 255, 0.5);
-
-  --color-button-bg: #333;
-  --color-button: #f1f1f18f;
-
-  --color-text: rgb(218, 211, 197);
-  --color-hr: #f1f1f18f;
-
-  --color-border: rgba(214, 214, 214, 0.8);
-
-  --color-nav-bg: #383737;
-  --color-nav-hover: rgba(68, 68, 68, 0.901);
-
-  --color-ball-bg: #3d3d3d;
-  --color-ball-text: #bababa;
-  --color-ball-box-shadow: rgba(255, 255, 255, 0.35);
-
-  --color-selected-shadow-first: rgba(255, 255, 255, 0.1);
-  --color-selected-shadow-second: rgba(255, 255, 255, 0.2);
-
-  --color-hover: rgba(255, 255, 255, 0.1);
-  --color-active: rgba(255, 255, 255, 0.2);
-
-  --color-title-selected: #b8860b;
-  --color-title-bg: #ffb700cd;
-
-  --color-to-post: white;
-  --color-to-post-bg: #a1a1a1e1;
-  --color-to-post-border: #333;
-
-  --color-level: #c79900;
-
-  --color-a-in-post: #00d9ff;
-  --color-a-hover-in-post: #ffd900;
-  --color-a-hover-bg-in-post: #9cff817e;
-
-  --color-user-text: #cbb745;
-
-  --color-post-card-box-shadow: rgba(255, 255, 255, 0.24);
-  --color-post-card-hover-box-shadow: rgba(255, 255, 255, 0.35);
-
-  --color-level-undefined-box-shadow: #9d9d9dde;
-  --color-level-6-bg: #a9a9a94e;
-
-  --chat-bg-main: #444;
-  --chat-bg-highlight: #282828;
-  --chat-text: #ccc;
-  --chat-text-tips: #383838;
-
-  /* 商城相关变量 - 夜间模式 */
-  --shop-card-bg: #2e2e2e;
-  --shop-section-bg: #2e2e2e;
-  --shop-filter-bg: #2e2e2e;
-  --shop-text-secondary: #aaa;
-  --shop-text-muted: #888;
-  --shop-skeleton-bg: #3a3a3a;
-
+  --color-text: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-border: rgba(148, 163, 184, 0.18);
+  --color-hr: rgba(148, 163, 184, 0.18);
   --color-link: #2dd4bf;
   --color-link-hover: #5eead4;
+  --color-price: #2dd4bf;
+
+  --color-scroll: rgba(255, 255, 255, 0.1);
+  --color-scroll-thumb: rgba(255, 255, 255, 0.3);
+
+  --color-button-bg: #334155;
+  --color-button: #e2e8f0;
+  --color-hover: rgba(148, 163, 184, 0.1);
+  --color-active: rgba(148, 163, 184, 0.16);
+  --color-nav-hover: rgba(148, 163, 184, 0.12);
+
+  --color-success: #4ade80;
+  --color-error: #f87171;
+  --color-info: #38bdf8;
+  --color-warning: #fbbf24;
+
+  --color-post-card-box-shadow: rgba(0, 0, 0, 0.25);
+  --color-post-card-hover-box-shadow: rgba(0, 0, 0, 0.4);
+  --color-level-undefined-box-shadow: rgba(200, 200, 200, 0.35);
+
+  --chat-bg-main: #1e293b;
+  --chat-bg-highlight: #334155;
+  --chat-text: #94a3b8;
+  --chat-text-tips: #94a3b8;
+
+  --shop-card-bg: #1e293b;
+  --shop-section-bg: #1e293b;
+  --shop-filter-bg: #1e293b;
+  --shop-text-secondary: #94a3b8;
+  --shop-text-muted: #64748b;
+  --shop-skeleton-bg: #283548;
 }
