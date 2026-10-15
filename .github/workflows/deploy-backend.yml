@@ -1,0 +1,60 @@
+name: Deploy Backend
+
+# 后端改动（src/ 或 pom.xml）push 到 master 时自动打包并部署；
+# 也可在 GitHub 网页 Actions 页手动点击 Run workflow 触发。
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'src/**'
+      - 'pom.xml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Build jar
+        run: mvn -B package -DskipTests
+
+      - name: Setup SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      # 先上传为 app.jar.new，再在服务器上原子替换并重启，避免上传中断损坏正在运行的 jar
+      - name: Upload jar
+        run: |
+          scp -i ~/.ssh/deploy_key target/software-market-0.0.1-SNAPSHOT.jar \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/software-market/app.jar.new
+
+      - name: Swap and restart service
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
+            set -e
+            cd /opt/software-market
+            cp -f app.jar app.jar.bak.latest
+            mv -f app.jar.new app.jar
+            systemctl restart software-market
+            sleep 6
+            systemctl is-active software-market
+          '
