@@ -32,6 +32,8 @@ yarn.lock
 .env
 .env.*
 !.env.example
+# 前端生产构建配置：只含相对路径 /api，无敏感信息，必须入库
+!fronted/newSSE/.env.production
 
 # ---- Spring 本地/生产配置（含真实密钥，仓库只保留 .example 模板）----
 application-local.yml
