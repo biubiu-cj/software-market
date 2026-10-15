@@ -23,10 +23,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 版本由 package.json 的 packageManager 字段决定（与本地开发保持一致）
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          package_json_file: fronted/newSSE/package.json
 
       - name: Setup Node
         uses: actions/setup-node@v4
