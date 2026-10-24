@@ -1,5 +1,13 @@
 import { requestFunc } from '../req'
 
+export interface SendPostResponse {
+  code: number
+  message: string
+  data: {
+    postId: number
+  } | null
+}
+
 /**
  *
  * @param {string} content 内容
@@ -14,7 +22,7 @@ async function sendPost(
   photos: string,
   tagList: string,
   title: string,
-) {
+): Promise<SendPostResponse | null> {
   try {
     const res = await requestFunc(`/auth/post`, {
       method: 'POST',
@@ -29,8 +37,10 @@ async function sendPost(
         title,
       },
     }, true)
-    const data = await res!.json()
-    return data
+    if (!res) {
+      return null
+    }
+    return await res.json() as SendPostResponse
   }
   catch (e) {
     console.error(e)

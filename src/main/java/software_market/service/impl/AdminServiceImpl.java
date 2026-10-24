@@ -12,6 +12,7 @@ import software_market.entity.comment.Ccomment;
 import software_market.entity.comment.Pcomment;
 import software_market.entity.post.Post;
 import software_market.entity.post.Sue;
+import software_market.event.RagIndexEventPublisher;
 import software_market.exception.BizException;
 import software_market.mapper.UserMapper;
 import software_market.mapper.comment.CcommentMapper;
@@ -37,6 +38,7 @@ public class AdminServiceImpl implements AdminService {
     private final PostMapper postMapper;
     private final PcommentMapper pcommentMapper;
     private final CcommentMapper ccommentMapper;
+    private final RagIndexEventPublisher ragIndexEventPublisher;
 
     @Override
     public Map<String, String> login(AdminLoginDTO dto) {
@@ -404,5 +406,6 @@ public class AdminServiceImpl implements AdminService {
         post.setBrowseNum(0);
         post.setHeat(0.0);
         postMapper.insert(post);
+        ragIndexEventPublisher.reindex(post.getPostId());
     }
 }

@@ -12,6 +12,7 @@ import DetailCard from '@/components/card/DetailCard.vue'
 
 import { showImg } from '@/components/ImageShower'
 import { showMsg } from '@/components/MessageBox'
+import PostAiAnalysis from '@/components/post/PostAiAnalysis.vue'
 import RatingDetailCard from '@/components/rating/RatingDetailCard.vue'
 import { useNewPostsStore } from '@/store/newPostsStore'
 import { usePostStore } from '@/store/postStore'
@@ -205,6 +206,11 @@ onMounted(async () => {
     <div v-else>
       loading...
     </div>
+    <PostAiAnalysis
+      v-if="post && postType === 'post'"
+      :post-id="post.PostID"
+      class="mx-a w-15/16"
+    />
     <div class="mt-5 h-a w-full">
       <div class="mb-3 flex items-center justify-between">
         <h2 class="comment-heading">

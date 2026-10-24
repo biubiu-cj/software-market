@@ -12,7 +12,7 @@ import software_market.vo.post.HeatResponseVO;
 import java.util.List;
 
 public interface PostService extends IService<Post> {
-    void post(PostDTO postDTO);
+    Integer post(PostDTO postDTO);
 
     List<?> browse(@Valid BrowsePostDTO browsePostDTO);
 

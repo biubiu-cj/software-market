@@ -68,6 +68,18 @@ app:
   # 上传文件根目录。本地开发用相对路径（相对启动目录）；
   # 服务器上请改绝对路径并确保运行用户有写权限，例如 /opt/software-market/upload
   upload-dir: ${UPLOAD_DIR:./upload}
+  ai:
+    analysis-cache-minutes: ${AI_ANALYSIS_CACHE_MINUTES:30}
+    rate-limit-per-minute: ${AI_RATE_LIMIT_PER_MINUTE:5}
+
+# agent-service 是独立进程，仅监听内网；前端不能直接访问 8090。
+agent:
+  service:
+    enabled: ${AGENT_SERVICE_ENABLED:true}
+    base-url: ${AGENT_SERVICE_BASE_URL:http://127.0.0.1:8090}
+    token: ${AGENT_SERVICE_TOKEN:dev-token}
+    connect-timeout: 2s
+    read-timeout: 60s
 
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml

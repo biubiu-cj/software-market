@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import software_market.dto.request.post.UpdateBrowseNumDTO;
 import software_market.entity.post.*;
 import software_market.entity.Notice;
 import software_market.event.NotificationEvent;
+import software_market.event.RagIndexEventPublisher;
 import software_market.entity.User;
 import software_market.entity.comment.Ccomment;
 import software_market.entity.comment.Ccdeny;
@@ -46,6 +48,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements PostService {
@@ -68,6 +71,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     private final TagMapper tagMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final MultiLevelCache cache;
+    private final RagIndexEventPublisher ragIndexEventPublisher;
 
     private static final String USER_CACHE_KEY = "user:";
     private static final String TAGS_CACHE_KEY = "tags:all";
@@ -75,7 +79,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     private static final int TAGS_L2_TTL = 7200;    // 2h
 
     @Override
-    public void post(PostDTO postDTO) {
+    @Transactional(rollbackFor = Exception.class)
+    public Integer post(PostDTO postDTO) {
         Integer userId = UserContext.getUserId();
         User user = userMapper.selectById(userId);
         if (user == null) {
@@ -97,6 +102,9 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         if (!success) {
             throw new BizException("发布失败");
         }
+        // 事务提交后异步写入 RAG 索引，不影响发帖主流程
+        ragIndexEventPublisher.reindex(post.getPostId());
+        return post.getPostId();
     }
 
     //主逻辑
@@ -600,6 +608,14 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         pbrowseMapper.deleteByPostId(postID);
 
         postMapper.deleteById(postID);
+        try {
+            stringRedisTemplate.delete(RedisKeyConstant.AI_ANALYSIS_CACHE + postID);
+        } catch (Exception e) {
+            log.warn("清理 AI 分析缓存失败，不影响帖子删除: postId={}", postID, e);
+        }
+
+        // 事务提交后删除该帖在 Milvus 中的全部向量
+        ragIndexEventPublisher.delete(postID);
     }
 
     @Override

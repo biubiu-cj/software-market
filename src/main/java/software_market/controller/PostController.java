@@ -12,6 +12,7 @@ import software_market.utils.Result;
 import software_market.vo.post.GetPostNumVO;
 import software_market.vo.post.GetPostTypeVO;
 import software_market.vo.post.HeatResponseVO;
+import software_market.vo.post.PostCreateVO;
 
 import java.util.List;
 
@@ -28,9 +29,9 @@ public class PostController {
      * @return
      */
     @PostMapping("/post")
-    public Result post(@RequestBody @Valid PostDTO postDTO) {
-        postService.post(postDTO);
-        return Result.success(null,"发帖成功");
+    public Result<PostCreateVO> post(@RequestBody @Valid PostDTO postDTO) {
+        Integer postId = postService.post(postDTO);
+        return Result.success(new PostCreateVO(postId), "发帖成功");
     }
 
     /**

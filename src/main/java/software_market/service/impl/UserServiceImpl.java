@@ -53,6 +53,7 @@ import software_market.mapper.post.PostMapper;
 import software_market.mapper.post.PsaveMapper;
 import software_market.cache.MultiLevelCache;
 import software_market.event.EmailEvent;
+import software_market.event.RagIndexEventPublisher;
 import software_market.service.MailService;
 import software_market.service.UserService;
 import software_market.vo.user.*;
@@ -78,6 +79,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final CdkeyMapper cdkeyMapper;
     private final UserMapper userMapper;
     private final JwtProvider jwtProvider;
+    private final RagIndexEventPublisher ragIndexEventPublisher;
     private final RefreshTokenMapper refreshTokenMapper;
     private final MailService mailService;
     private final KafkaProducerService kafkaProducerService;
@@ -557,6 +559,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         Integer userId = user.getUserId();
 
+        // 注销前先记录受影响的帖子：用户自己的帖子会被删除，其他帖子需要重建索引
+        List<Integer> affectedPostIds = pcommentMapper.selectList(
+                        Wrappers.<Pcomment>lambdaQuery().eq(Pcomment::getUserId, userId))
+                .stream()
+                .map(Pcomment::getPtargetId)
+                .distinct()
+                .collect(Collectors.toList());
+        List<Integer> userCcommentIds = ccommentMapper.selectList(
+                        Wrappers.<Ccomment>lambdaQuery().eq(Ccomment::getUserId, userId))
+                .stream()
+                .map(Ccomment::getCtargetId)
+                .distinct()
+                .collect(Collectors.toList());
+        if (!userCcommentIds.isEmpty()) {
+            affectedPostIds.addAll(pcommentMapper.selectBatchIds(userCcommentIds).stream()
+                    .map(Pcomment::getPtargetId)
+                    .toList());
+        }
+
         // 级联删除用户的所有帖子及其关联数据
         List<Integer> postIds = postMapper.selectPostIdsByUserId(userId);
 
@@ -627,6 +648,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BizException("注销失败");
         }
         stringRedisTemplate.delete(key);
+
+        // 事务提交后清理/重建受影响的向量索引
+        postIds.forEach(ragIndexEventPublisher::delete);
+        affectedPostIds.stream()
+                .filter(postId -> !postIds.contains(postId))
+                .distinct()
+                .forEach(ragIndexEventPublisher::reindex);
     }
 
     @Override
