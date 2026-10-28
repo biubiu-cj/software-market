@@ -8,11 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-import software_market.config.security.JwtProvider;
 import software_market.dto.response.TokenPair;
-import software_market.entity.RefreshToken;
 import software_market.entity.User;
-import software_market.mapper.RefreshTokenMapper;
 import software_market.mapper.UserMapper;
 
 import java.net.URLEncoder;
@@ -27,8 +24,7 @@ import java.util.UUID;
 public class WechatServiceImpl {
 
     private final UserMapper userMapper;
-    private final JwtProvider jwtProvider;
-    private final RefreshTokenMapper refreshTokenMapper;
+    private final TokenService tokenService;
 
     @Value("${wechat.appid}")
     private String appid;
@@ -132,23 +128,7 @@ public class WechatServiceImpl {
         // }
 
         // 5. 签发 JWT
-        return issueTokenPair(user);
-    }
-
-    private TokenPair issueTokenPair(User user) {
-        Integer userId = user.getUserId();
-        String accessToken = jwtProvider.generateAccessToken(userId.toString());
-        String refreshToken = jwtProvider.generateRefreshToken(userId.toString());
-
-        RefreshToken record = new RefreshToken();
-        record.setUserId(user.getUserId());
-        record.setToken(refreshToken);
-        record.setExpiresAt(LocalDateTime.now().plusDays(30));
-        record.setIsUsed(false);
-        record.setCreatedAt(LocalDateTime.now());
-        refreshTokenMapper.insert(record);
-
-        return new TokenPair(accessToken, refreshToken);
+        return tokenService.issueTokenPair(user);
     }
 
     // ====== 微信 API 响应 DTO ======
