@@ -5,6 +5,8 @@ services:
     container_name: milvus-standalone
     image: milvusdb/milvus:v2.4.15
     command: ["milvus", "run", "standalone"]
+    # Docker Desktop 重启后自动拉起，避免 agent-service 因 Milvus 未启动而 RAG 不可用
+    restart: unless-stopped
     security_opt:
       - seccomp:unconfined
     environment:
