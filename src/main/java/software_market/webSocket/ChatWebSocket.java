@@ -50,7 +50,8 @@ public class ChatWebSocket {
                 return;
             }
 
-            Integer userId = jwtProvider.getUserId(token);
+            // 握手阶段只允许 Access Token；Refresh Token / OAuth2 Token 会被拒绝
+            Integer userId = jwtProvider.getUserId(jwtProvider.parseAccessToken(token));
             if (userId == null) {
                 sendErrorAndClose(session, "Invalid token");
                 return;

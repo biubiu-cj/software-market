@@ -107,8 +107,13 @@ async function submitPost() {
     teacher.value,
     postTitle,
   )
-  router.push('/')
-  showMsg(res.msg)
+  const postId = res?.data?.postId
+  if (!res || res.code !== 200 || !postId) {
+    showMsg(res?.message ?? '发帖失败，请稍后重试')
+    return
+  }
+  showMsg(res.message)
+  router.push(`/postdetail/${postId}`)
 }
 
 onMounted(async () => {

@@ -13,6 +13,7 @@ import software_market.entity.User;
 import software_market.entity.comment.*;
 import software_market.entity.post.Post;
 import software_market.event.NotificationEvent;
+import software_market.event.RagIndexEventPublisher;
 import software_market.exception.BizException;
 import software_market.mapper.NoticeMapper;
 import software_market.mapper.UserMapper;
@@ -45,6 +46,7 @@ public class CommentServiceImpl implements CommentService {
     private final CcdenyMapper ccdenyMapper;
     private final NoticeMapper noticeMapper;
     private final KafkaProducerService kafkaProducerService;
+    private final RagIndexEventPublisher ragIndexEventPublisher;
     @Override
     public List<CommentResponseVO> showPcomments(ShowPcommentsDTO dto) {
         Integer postID = dto.getPostID();
@@ -179,6 +181,9 @@ public class CommentServiceImpl implements CommentService {
                     "评论了你的帖子: " + preview, postID);
             kafkaProducerService.sendNotificationEvent(event);
         }
+
+        // 事务提交后重建该帖的 RAG 知识文档
+        ragIndexEventPublisher.reindex(postID);
     }
 
     @Transactional
@@ -228,6 +233,9 @@ public class CommentServiceImpl implements CommentService {
         post.setCommentNum(post.getCommentNum() + 1);
         post.setHeat(post.getHeat() + 6);
         postMapper.updateById(post);
+
+        // 事务提交后重建该帖的 RAG 知识文档
+        ragIndexEventPublisher.reindex(postID);
     }
 
     @Override
@@ -278,6 +286,9 @@ public class CommentServiceImpl implements CommentService {
         pclikeMapper.delete(Wrappers.<Pclike>lambdaQuery().eq(Pclike::getPctargetId, pcommentID));
         pcdenyMapper.delete(Wrappers.<Pcdeny>lambdaQuery().eq(Pcdeny::getPctargetId, pcommentID));
         pcommentMapper.deleteById(pcommentID);
+
+        // 事务提交后重建该帖的 RAG 知识文档
+        ragIndexEventPublisher.reindex(pcomment.getPtargetId());
     }
 
     @Override
@@ -314,6 +325,9 @@ public class CommentServiceImpl implements CommentService {
         cclikeMapper.delete(Wrappers.<Cclike>lambdaQuery().eq(Cclike::getCctargetId, ccommentID));
         ccdenyMapper.delete(Wrappers.<Ccdeny>lambdaQuery().eq(Ccdeny::getCctargetId, ccommentID));
         ccommentMapper.deleteById(ccommentID);
+
+        // 事务提交后重建该帖的 RAG 知识文档
+        ragIndexEventPublisher.reindex(pcomment.getPtargetId());
     }
 
     @Override

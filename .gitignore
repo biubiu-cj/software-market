@@ -2,6 +2,10 @@
 target/
 *.class
 
+# ---- Milvus / Agent 本地数据与密钥 ----
+infra/milvus/volumes/
+agent-service/.env
+
 # ---- IDE / 编辑器 ----
 .idea/
 *.iml

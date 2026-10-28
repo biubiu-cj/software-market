@@ -1,34 +1,38 @@
 package software_market.config.security;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import software_market.service.impl.CustomUserDetailsService;
 
 import java.io.IOException;
-import java.util.List;
 
-@Component
+/**
+ * 从 Authorization: Bearer 头解析 Access Token，校验通过后写入 SecurityContextHolder。
+ *
+ * 注意：
+ * 1. 只接受 Access Token（subject/issuer/tokenType/过期时间/签名全部校验），
+ *    Refresh Token 和 OAuth2 Token 都会在这里被拒绝。
+ * 2. 不接受 URL 参数传 token；唯一例外是 WebSocket 握手（由 ChatWebSocket 自行校验）。
+ * 3. 校验失败不直接写响应，而是保持匿名，由 AuthorizationFilter 判定是否放行，
+ *    再交给 RestAuthenticationEntryPoint 返回统一的 401 JSON。
+ */
+@Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
-    private final UnauthorizedEntryPoint unauthorizedEntryPoint;
-
-    private static final List<String> WHITE_LIST = List.of(
-            "/api/auth/login",
-            "/api/auth/adminLogin",
-            "/api/auth/register",
-            "/api/auth/validateEmail",
-            "/api/auth/refresh",
-            "/api/auth/modifyPassword",
-            "/avatar/",
-            "/websocket/"
-    );
+    private final CustomUserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -36,64 +40,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String path = request.getRequestURI();
-
-        // ✅ 1. OPTIONS 必须放行（CORS预检）
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // ✅ 2. 解析 token（如果有）
         String token = resolveToken(request);
-        if (StringUtils.hasText(token)) {
+
+        if (StringUtils.hasText(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                Integer userId = jwtProvider.getUserId(token);
-                UserContext.setUserId(userId);
+                Claims claims = jwtProvider.parseAccessToken(token);
+                LoginUser loginUser = userDetailsService.loadUserById(jwtProvider.getUserId(claims));
+
+                UsernamePasswordAuthenticationToken authentication =
+                        UsernamePasswordAuthenticationToken.authenticated(
+                                loginUser, null, loginUser.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                SecurityContext context = SecurityContextHolder.createEmptyContext();
+                context.setAuthentication(authentication);
+                SecurityContextHolder.setContext(context);
             } catch (Exception e) {
-                unauthorizedEntryPoint.handle(request, response, e);
-                return;
+                SecurityContextHolder.clearContext();
+                log.debug("Access Token 校验失败: {}", e.getMessage());
             }
-        }
-
-        // ✅ 3. SecurityConfig 中已配置 permitAll() 的路径：无 token 也放行
-        if (isWhiteList(path) || path.startsWith("/api/auth/")) {
-            try {
-                filterChain.doFilter(request, response);
-            } finally {
-                UserContext.clear();
-            }
-            return;
-        }
-
-        // ✅ 4. 其他路径必须有 token
-        if (!StringUtils.hasText(token)) {
-            unauthorizedEntryPoint.handle(
-                    request,
-                    response,
-                    new RuntimeException("未携带Token")
-            );
-            return;
         }
 
         try {
             filterChain.doFilter(request, response);
         } finally {
-            UserContext.clear();
+            // SecurityContextHolderFilter 通常已清理，这里兜底，避免线程复用导致身份泄漏
+            SecurityContextHolder.clearContext();
         }
-    }
-
-    private boolean isWhiteList(String path) {
-        return WHITE_LIST.stream().anyMatch(path::startsWith);
     }
 
     private String resolveToken(HttpServletRequest request) {
-
         String bearer = request.getHeader("Authorization");
-
         if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
         }
-        return request.getParameter("token");
+        return null;
     }
 }

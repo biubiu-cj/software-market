@@ -1,0 +1,76 @@
+server:
+  port: 8090
+  # 只监听本机，前端和公网都不能直接访问
+  address: 127.0.0.1
+
+spring:
+  application:
+    name: software-market-agent
+  # 本地默认加载 application-local.yml（含数据库密码，已被 .gitignore 忽略）
+  # 服务器上通过 SPRING_PROFILES_ACTIVE=prod 覆盖
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  datasource:
+    url: ${RAG_DB_URL:jdbc:mysql://localhost:3306/software_market?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${RAG_DB_USERNAME:root}
+    password: ${RAG_DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      # 仅用于读取，生产环境请使用只读账号
+      read-only: true
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    consumer:
+      group-id: agent-rag-indexer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      max-poll-records: 5
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+    listener:
+      ack-mode: record
+
+agent:
+  internal-token: ${AGENT_SERVICE_TOKEN:dev-token}
+  rag:
+    collection: ${MILVUS_COLLECTION:software_market_rag}
+    top-k: 8
+    score-threshold: 0.55
+    max-related-posts: 5
+    max-related-replies: 8
+    max-replies-per-post: 2
+    min-comment-length: 8
+    chunk-size: 600
+    chunk-max-size: 800
+    chunk-overlap: 80
+    upsert-batch-size: 20
+  embedding:
+    # 本地 Ollama BGE-M3
+    base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
+    model: ${OLLAMA_EMBEDDING_MODEL:bge-m3}
+    dimension: ${OLLAMA_EMBEDDING_DIMENSION:1024}
+    batch-size: 16
+    connect-timeout: 5s
+    read-timeout: 60s
+  chat:
+    base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+    api-key: ${DEEPSEEK_API_KEY:}
+    model: ${DEEPSEEK_MODEL:deepseek-chat}
+    timeout: 60s
+  milvus:
+    host: ${MILVUS_HOST:localhost}
+    port: ${MILVUS_PORT:19530}
+    collection: ${MILVUS_COLLECTION:software_market_rag}
+    connect-timeout: 5s
+    ensure-on-startup: true
+
+logging:
+  level:
+    software_market_agent: INFO
+    io.milvus: WARN

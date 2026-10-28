@@ -1,5 +1,6 @@
 package software_market.entity;
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,8 @@ public class User {
 
     private String email;
 
+    // 密码哈希绝不能出现在任何 HTTP 响应里（getInfo 等接口会直接返回该实体）
+    @JsonIgnore
     private String password;
 
     private String name;

@@ -2,9 +2,13 @@ package software_market.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import software_market.config.security.JwtProvider;
+import software_market.config.security.LoginUser;
 import software_market.config.security.UserContext;
 import software_market.dto.request.admin.*;
 import software_market.entity.User;
@@ -12,6 +16,7 @@ import software_market.entity.comment.Ccomment;
 import software_market.entity.comment.Pcomment;
 import software_market.entity.post.Post;
 import software_market.entity.post.Sue;
+import software_market.event.RagIndexEventPublisher;
 import software_market.exception.BizException;
 import software_market.mapper.UserMapper;
 import software_market.mapper.comment.CcommentMapper;
@@ -32,36 +37,41 @@ public class AdminServiceImpl implements AdminService {
 
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
-    private final JwtProvider jwtProvider;
+    private final AuthenticationManager authenticationManager;
+    private final TokenService tokenService;
     private final SueMapper sueMapper;
     private final PostMapper postMapper;
     private final PcommentMapper pcommentMapper;
     private final CcommentMapper ccommentMapper;
+    private final RagIndexEventPublisher ragIndexEventPublisher;
 
     @Override
     public Map<String, String> login(AdminLoginDTO dto) {
-        String account = dto.getAccount().trim();
+        String account = dto.getAccount() == null ? "" : dto.getAccount().trim();
         String password = dto.getPassword();
 
-        User user = userMapper.selectOne(
-                Wrappers.<User>lambdaQuery()
-                        .eq(User::getEmail, account)
-        );
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    UsernamePasswordAuthenticationToken.unauthenticated(account, password));
+        } catch (AuthenticationException e) {
+            throw new BizException("账号或密码错误");
+        }
 
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> LoginUser.ROLE_ADMIN.equals(a.getAuthority())
+                        || LoginUser.ROLE_OFFICIAL.equals(a.getAuthority()));
+        if (!isAdmin) {
+            throw new BizException("无管理员权限");
+        }
+
+        LoginUser principal = (LoginUser) authentication.getPrincipal();
+        User user = userMapper.selectById(principal.getUserId());
         if (user == null) {
             throw new BizException("账号或密码错误");
         }
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new BizException("账号或密码错误");
-        }
-
-        if (!"admin".equals(user.getIdentity()) && !"official".equals(user.getIdentity())) {
-            throw new BizException("无管理员权限");
-        }
-
-        String token = jwtProvider.generateAccessToken(String.valueOf(user.getUserId()));
-        return Map.of("token", token);
+        return Map.of("token", tokenService.issueAccessToken(user));
     }
 
     @Override
@@ -404,5 +414,6 @@ public class AdminServiceImpl implements AdminService {
         post.setBrowseNum(0);
         post.setHeat(0.0);
         postMapper.insert(post);
+        ragIndexEventPublisher.reindex(post.getPostId());
     }
 }

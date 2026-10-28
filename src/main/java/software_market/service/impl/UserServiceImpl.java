@@ -3,11 +3,14 @@ package software_market.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
-import software_market.config.security.JwtProvider;
+import software_market.config.security.LoginUser;
 import software_market.config.security.UserContext;
 import software_market.constant.RedisKeyConstant;
 import software_market.dto.request.user.*;
@@ -53,6 +56,7 @@ import software_market.mapper.post.PostMapper;
 import software_market.mapper.post.PsaveMapper;
 import software_market.cache.MultiLevelCache;
 import software_market.event.EmailEvent;
+import software_market.event.RagIndexEventPublisher;
 import software_market.service.MailService;
 import software_market.service.UserService;
 import software_market.vo.user.*;
@@ -77,7 +81,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final StringRedisTemplate stringRedisTemplate;
     private final CdkeyMapper cdkeyMapper;
     private final UserMapper userMapper;
-    private final JwtProvider jwtProvider;
+    private final AuthenticationManager authenticationManager;
+    private final TokenService tokenService;
+    private final RagIndexEventPublisher ragIndexEventPublisher;
     private final RefreshTokenMapper refreshTokenMapper;
     private final MailService mailService;
     private final KafkaProducerService kafkaProducerService;
@@ -152,7 +158,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.insert(user);
-        return issueTokenPair(user);
+        return tokenService.issueTokenPair(user);
     }
 
     @Override
@@ -193,22 +199,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public TokenPair login(@RequestBody LoginDTO loginDTO) {
-        String email = loginDTO.getEmail().trim();
+        String email = loginDTO.getEmail() == null ? "" : loginDTO.getEmail().trim();
         String password = loginDTO.getPassword();
-        if (password.isEmpty()) {
+        if (!StringUtils.hasText(password)) {
             throw new BizException("密码不能为空");
         }
-        User user = userMapper.selectOne(
-                Wrappers.<User>lambdaQuery()
-                        .eq(User::getEmail, email)
-        );
+
+        Authentication authentication;
+        try {
+            // 标准 Spring Security 认证入口：UserDetailsService + DaoAuthenticationProvider + BCrypt
+            authentication = authenticationManager.authenticate(
+                    UsernamePasswordAuthenticationToken.unauthenticated(email, password));
+        } catch (AuthenticationException e) {
+            throw new BizException("邮箱或密码错误");
+        }
+
+        LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+        User user = userMapper.selectById(loginUser.getUserId());
         if (user == null) {
             throw new BizException("用户不存在");
         }
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new BizException("密码错误");
-        }
-        return issueTokenPair(user);
+        return tokenService.issueTokenPair(user);
     }
 
     @Override
@@ -255,22 +266,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public TokenPair refresh(RefreshTokenDTO refreshTokenDTO) {
-        Claims claims = jwtProvider.parseRefreshToken(refreshTokenDTO.getRefreshToken());
-        RefreshToken refreshToken = refreshTokenMapper.selectByTokenAndNotUsed(refreshTokenDTO.getRefreshToken());
-        if (refreshToken == null) {
-            throw new BizException("refresh token无效");
-        }
-        if(LocalDateTime.now().isAfter(refreshToken.getExpiresAt())) {
-            refreshToken.setIsUsed(true);
-            refreshTokenMapper.updateById(refreshToken);
-            throw new BizException("refresh token已过期");
-        }
-        Integer userId = Integer.parseInt(claims.get("userId", String.class));
-        User user = userMapper.selectById(userId);
-        if(user==null){
-            throw new BizException("用户不存在");
-        }
-        return issueTokenPair(user);
+        return tokenService.refresh(refreshTokenDTO.getRefreshToken());
     }
 
     @Override
@@ -557,6 +553,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         Integer userId = user.getUserId();
 
+        // 注销前先记录受影响的帖子：用户自己的帖子会被删除，其他帖子需要重建索引
+        List<Integer> affectedPostIds = pcommentMapper.selectList(
+                        Wrappers.<Pcomment>lambdaQuery().eq(Pcomment::getUserId, userId))
+                .stream()
+                .map(Pcomment::getPtargetId)
+                .distinct()
+                .collect(Collectors.toList());
+        List<Integer> userCcommentIds = ccommentMapper.selectList(
+                        Wrappers.<Ccomment>lambdaQuery().eq(Ccomment::getUserId, userId))
+                .stream()
+                .map(Ccomment::getCtargetId)
+                .distinct()
+                .collect(Collectors.toList());
+        if (!userCcommentIds.isEmpty()) {
+            affectedPostIds.addAll(pcommentMapper.selectBatchIds(userCcommentIds).stream()
+                    .map(Pcomment::getPtargetId)
+                    .toList());
+        }
+
         // 级联删除用户的所有帖子及其关联数据
         List<Integer> postIds = postMapper.selectPostIdsByUserId(userId);
 
@@ -627,6 +642,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BizException("注销失败");
         }
         stringRedisTemplate.delete(key);
+
+        // 事务提交后清理/重建受影响的向量索引
+        postIds.forEach(ragIndexEventPublisher::delete);
+        affectedPostIds.stream()
+                .filter(postId -> !postIds.contains(postId))
+                .distinct()
+                .forEach(ragIndexEventPublisher::reindex);
     }
 
     @Override
@@ -704,21 +726,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     private String generateCode() {
         return String.valueOf((int)((Math.random() * 9 + 1) * 100000));
-    }
-
-    private TokenPair issueTokenPair(User user) {
-        Integer userId = user.getUserId();
-        String accessToken = jwtProvider.generateAccessToken(userId.toString());
-        String refreshToken = jwtProvider.generateRefreshToken(userId.toString());
-        // 入库记录 refresh token（一次性使用）
-        RefreshToken record = new RefreshToken();
-        record.setUserId(user.getUserId());
-        record.setToken(refreshToken);
-        record.setExpiresAt(LocalDateTime.now().plusDays(30));
-        record.setIsUsed(false);
-        record.setCreatedAt(LocalDateTime.now());
-        refreshTokenMapper.insert(record);
-        return new TokenPair(accessToken, refreshToken);
     }
 
     private void recordValidateFail(String email) {

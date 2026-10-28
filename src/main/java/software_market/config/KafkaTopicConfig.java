@@ -14,9 +14,11 @@ public class KafkaTopicConfig {
 
     public static final String TOPIC_EMAIL_VERIFICATION = "email-verification";
     public static final String TOPIC_NOTIFICATION = "notification-events";
+    public static final String TOPIC_RAG_INDEX = "rag-index-topic";
 
     public static final String TOPIC_EMAIL_VERIFICATION_DLT = TOPIC_EMAIL_VERIFICATION + ".DLT";
     public static final String TOPIC_NOTIFICATION_DLT = TOPIC_NOTIFICATION + ".DLT";
+    public static final String TOPIC_RAG_INDEX_DLT = TOPIC_RAG_INDEX + ".DLT";
 
     @Bean
     public NewTopic emailVerificationTopic() {
@@ -46,6 +48,22 @@ public class KafkaTopicConfig {
     public NewTopic notificationDltTopic() {
         return TopicBuilder.name(TOPIC_NOTIFICATION_DLT)
                 .partitions(2)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic ragIndexTopic() {
+        return TopicBuilder.name(TOPIC_RAG_INDEX)
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic ragIndexDltTopic() {
+        return TopicBuilder.name(TOPIC_RAG_INDEX_DLT)
+                .partitions(3)
                 .replicas(1)
                 .build();
     }
