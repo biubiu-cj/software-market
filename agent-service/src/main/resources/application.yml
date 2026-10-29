@@ -42,14 +42,22 @@ agent:
     collection: ${MILVUS_COLLECTION:software_market_rag}
     top-k: 8
     score-threshold: 0.55
+    # 严格阈值无命中时回退；回退结果只展示相关帖子，不生成结论
+    fallback-score-threshold: 0.45
     max-related-posts: 5
     max-related-replies: 8
+    max-context-docs: 8
     max-replies-per-post: 2
     min-comment-length: 8
     chunk-size: 600
     chunk-max-size: 800
     chunk-overlap: 80
     upsert-batch-size: 20
+    # 检索前用 LLM 改写查询，原文与改写各召回一路后做 RRF 融合
+    rewrite-enabled: ${RAG_QUERY_REWRITE_ENABLED:true}
+    rewrite-timeout: 20s
+    rewrite-max-chars: 100
+    rrf-k: 60
   embedding:
     # 本地 Ollama BGE-M3
     base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
@@ -69,6 +77,10 @@ agent:
     collection: ${MILVUS_COLLECTION:software_market_rag}
     connect-timeout: 5s
     ensure-on-startup: true
+  eval:
+    # 评测报告以 JSON 落盘，避免给只读库加表
+    report-dir: ${AGENT_EVAL_REPORT_DIR:./eval-reports}
+    default-dataset: classpath:eval/seed-eval.jsonl
 
 logging:
   level:

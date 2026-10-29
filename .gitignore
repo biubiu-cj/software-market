@@ -5,6 +5,7 @@ target/
 # ---- Milvus / Agent 本地数据与密钥 ----
 infra/milvus/volumes/
 agent-service/.env
+agent-service/eval-reports/
 
 # ---- IDE / 编辑器 ----
 .idea/
@@ -20,6 +21,9 @@ upload/
 # ---- 日志 ----
 logs/
 *.log
+
+# ---- Python 缓存（种子数据脚本）----
+__pycache__/
 
 # ---- 操作系统 ----
 .DS_Store

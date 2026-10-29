@@ -18,6 +18,7 @@ import software_market_agent.model.internal.AiRelatedReply;
 import software_market_agent.model.internal.PostAnalysisRequest;
 import software_market_agent.model.internal.PostAnalysisResponse;
 import software_market_agent.model.milvus.VectorSearchResult;
+import software_market_agent.rag.QueryRewriteService;
 import software_market_agent.rag.RagRetrievalService;
 
 import java.time.LocalDateTime;
@@ -49,38 +50,67 @@ public class PostAnalysisService {
 
     private final AgentProperties properties;
     private final RagRetrievalService retrievalService;
+    private final QueryRewriteService queryRewriteService;
     private final ChatModelProvider chatModelProvider;
     private final PostAnalysisAgentBuilder agentBuilder;
     private final ObjectMapper objectMapper;
 
     public PostAnalysisResponse analyze(PostAnalysisRequest request) {
         long startedAt = System.nanoTime();
-        PostAnalysisResponse response = baseResponse();
-
         RagRetrievalService.RetrievalResult retrieval;
         try {
-            String query = safe(request.getTitle()) + "\n" + safe(request.getContent());
-            retrieval = retrievalService.retrieve(query, request.getPostId());
+            retrieval = prepare(request);
         } catch (RagUnavailableException e) {
             log.warn("RAG 检索不可用: postId={}, error={}", request.getPostId(), e.getMessage());
+            PostAnalysisResponse response = baseResponse();
             response.setStatus(SERVICE_UNAVAILABLE);
             response.setConclusion("AI 检索服务暂时不可用，不影响帖子浏览、评论和点赞。");
             return finish(response, startedAt);
         }
+        return analyzeWithRetrieval(request, retrieval, baseResponse(), startedAt).response();
+    }
 
+    /**
+     * 检索阶段：LLM 改写 + 双路召回 + RRF 融合。评测也复用这一步，保证评测与线上链路一致。
+     */
+    public RagRetrievalService.RetrievalResult prepare(PostAnalysisRequest request) {
+        String query = safe(request.getTitle()) + "\n" + safe(request.getContent());
+        String rewritten = queryRewriteService.rewrite(request.getTitle(), request.getContent());
+        return retrievalService.retrieve(query, rewritten, request.getPostId());
+    }
+
+    public AnalysisOutcome analyzeWithRetrieval(PostAnalysisRequest request,
+                                                RagRetrievalService.RetrievalResult retrieval) {
+        return analyzeWithRetrieval(request, retrieval, baseResponse(), System.nanoTime());
+    }
+
+    private AnalysisOutcome analyzeWithRetrieval(PostAnalysisRequest request,
+                                                 RagRetrievalService.RetrievalResult retrieval,
+                                                 PostAnalysisResponse response,
+                                                 long startedAt) {
         List<VectorSearchResult> contextHits = dedupeHits(retrieval.hits());
+        int maxContextDocs = Math.max(1, properties.getRag().getMaxContextDocs());
+        if (contextHits.size() > maxContextDocs) {
+            contextHits = contextHits.subList(0, maxContextDocs);
+        }
         Map<String, Integer> citationIndexByKey = buildCitationIndex(contextHits);
 
         response.setRelatedPosts(retrieval.relatedPosts());
         response.setRelatedReplies(retrieval.relatedReplies());
+        if (retrieval.weak()) {
+            // 弱证据只展示相似度较低的相关帖子，不生成结论
+            response.setStatus(NO_HISTORY);
+            response.setConclusion("没有找到足够相关的历史讨论，下面列出的是相似度较低的历史帖子，仅供参考。");
+            return new AnalysisOutcome(finish(response, startedAt), contextHits);
+        }
         if (contextHits.isEmpty()) {
             response.setStatus(NO_HISTORY);
             response.setConclusion("站内暂无足够相关的历史讨论，AI 不会凭空回答。");
-            return finish(response, startedAt);
+            return new AnalysisOutcome(finish(response, startedAt), contextHits);
         }
 
         if (!chatModelProvider.isAvailable()) {
-            return extractiveFallback(response, contextHits, startedAt);
+            return new AnalysisOutcome(extractiveFallback(response, contextHits, startedAt), contextHits);
         }
 
         try {
@@ -91,31 +121,31 @@ public class PostAnalysisService {
                 response.setConclusion(parsed.conclusion().isBlank()
                         ? "站内历史讨论中没有足够依据回答当前问题。"
                         : parsed.conclusion());
-                return finish(response, startedAt);
+                return new AnalysisOutcome(finish(response, startedAt), contextHits);
             }
 
             ConclusionWithCitations normalized = normalizeCitations(parsed, contextHits);
             if (normalized.citations().isEmpty()) {
                 response.setStatus(NO_HISTORY);
                 response.setConclusion("模型没有给出可核实的历史引用，暂不展示未经核实的结论。");
-                return finish(response, startedAt);
+                return new AnalysisOutcome(finish(response, startedAt), contextHits);
             }
             response.setStatus(READY);
             response.setConclusion(normalized.conclusion());
             response.setCitations(normalized.citations());
             applyCitedIndexes(response, normalized.citations(), contextHits, citationIndexByKey);
             response.setModel(properties.getChat().getModel());
-            return finish(response, startedAt);
+            return new AnalysisOutcome(finish(response, startedAt), contextHits);
         } catch (ModelCallException e) {
             log.warn("大模型调用失败: postId={}, error={}", request.getPostId(), e.getMessage());
             response.setStatus(MODEL_ERROR);
             response.setConclusion("大模型调用失败，请稍后重试。帖子内容和评论不受影响。");
-            return finish(response, startedAt);
+            return new AnalysisOutcome(finish(response, startedAt), contextHits);
         } catch (Exception e) {
             log.error("AI 分析异常: postId={}", request.getPostId(), e);
             response.setStatus(MODEL_ERROR);
             response.setConclusion("AI 分析失败，请稍后重试。");
-            return finish(response, startedAt);
+            return new AnalysisOutcome(finish(response, startedAt), contextHits);
         }
     }
 
@@ -448,5 +478,8 @@ public class PostAnalysisService {
     }
 
     private record ConclusionWithCitations(String conclusion, List<AiCitation> citations) {
+    }
+
+    public record AnalysisOutcome(PostAnalysisResponse response, List<VectorSearchResult> contextHits) {
     }
 }

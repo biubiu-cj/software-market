@@ -18,6 +18,8 @@ Spring Boot 主应用 8080
           ├── 只读 MySQL（Post/Pcomment/Ccomment）
           ├── 本地 Ollama BGE-M3（1024 维）
           ├── Milvus 2.4 Standalone
+          ├── 查询改写 + 双路召回 + RRF 融合
+          ├── RAG 评测（Hit@K / MRR / Recall@K + LLM Judge）
           └── AgentScope 2.0.3 + DeepSeek
 ```
 
@@ -96,6 +98,8 @@ MILVUS_PORT
 OLLAMA_BASE_URL       默认 http://127.0.0.1:11434
 OLLAMA_EMBEDDING_MODEL 默认 bge-m3
 DEEPSEEK_API_KEY      没有时使用检索摘要兜底
+RAG_QUERY_REWRITE_ENABLED 是否启用 LLM 查询改写，默认 true
+AGENT_EVAL_REPORT_DIR 评测报告目录，默认 ./eval-reports
 ```
 
 可参考 `agent-service/.env.example`，不要把真实 Key 提交到仓库。
@@ -268,7 +272,100 @@ X-Internal-Token: <token>
 - 当前前端只展示“相关历史帖子”（标题 + 链接），不再渲染“相关历史回复”区块；`[n]` 引用仍可点击跳转。
 - 不再返回旧的 `evidence` 原帖片段列表。
 
-## 7. 数据与分片
+## 7. 检索增强与评测
+
+### 7.1 检索流程
+
+```text
+新帖标题 + 正文
+  ↓ DeepSeek 改写为简短检索查询（可关闭；模型不可用/失败时自动退回原查询）
+原文查询 ── Embedding ── Milvus TopK ┐
+改写查询 ── Embedding ── Milvus TopK ┴─ RRF 融合（按主键去重、合并命中来源）
+  ↓ 按 RRF 融合分排序
+严格阈值（0.55）无命中 → 回退阈值（0.45）再检索
+  ↓
+弱证据只展示相关历史帖子，不调用大模型生成结论
+```
+
+- RRF 只按排名累加 `1/(k+rank)`，不直接比较不同查询的余弦分；同一分片被两路召回时融合分更高。
+- 展示用的 `matchScore` 仍是最大余弦相似度，融合分只用于排序。
+- 改写路径检索失败时只记录告警，不影响原文召回。
+- 相关配置：
+
+| 配置 | 默认值 | 说明 |
+|---|---|---|
+| `agent.rag.rewrite-enabled` | `true` | 是否启用查询改写 |
+| `agent.rag.rewrite-timeout` | `20s` | 改写调用超时 |
+| `agent.rag.rewrite-max-chars` | `100` | 改写结果最大长度 |
+| `agent.rag.rrf-k` | `60` | RRF 平滑常数 |
+| `agent.rag.score-threshold` | `0.55` | 严格召回阈值 |
+| `agent.rag.fallback-score-threshold` | `0.45` | 严格阈值无命中时的回退阈值 |
+| `agent.rag.max-context-docs` | `8` | 注入提示词的上下文条数上限 |
+
+### 7.2 评测接口
+
+评测复用线上检索与生成链路（`PostAnalysisService.prepare` / `analyzeWithRetrieval`），计算：
+
+- 检索层：`Hit@K`、`MRR`、`Recall@K`，真值支持帖子 ID、帖子标题、回复键（`postId:commentId`）。
+- 生成层（LLM-as-Judge）：忠实度、相关性、答案正确性。
+- 上下文层：上下文精确率、上下文召回率。
+- 延迟：平均值、P50、P95。
+
+运行评测（默认数据集 `classpath:eval/seed-eval.jsonl`，105 条种子用例）：
+
+```bash
+curl -X POST http://127.0.0.1:8090/internal/agent/eval/run \
+  -H "X-Internal-Token: dev-token" \
+  -H "Content-Type: application/json" \
+  -d '{"config":{"concurrency":2,"maxCases":20}}'
+```
+
+请求字段：
+
+```json
+{
+  "datasetPath": "classpath:eval/seed-eval.jsonl",
+  "config": {
+    "topK": 8,
+    "concurrency": 2,
+    "enableGeneration": true,
+    "enableLlmJudge": true,
+    "maxCases": 0,
+    "reviewScoreThreshold": 0.6,
+    "reviewMrrThreshold": 0.5,
+    "reviewRecallAtKThreshold": 0.5
+  }
+}
+```
+
+- `enableGeneration=false` 时只评检索与上下文，不调用大模型生成答案。
+- 未配置 `DEEPSEEK_API_KEY` 时自动跳过 Judge，仅保留检索指标。
+- 报告写入 `agent.eval.report-dir`（默认 `./eval-reports`），不新增数据库表。
+
+查询报告：
+
+```bash
+curl http://127.0.0.1:8090/internal/agent/eval/runs?page=1&size=20 \
+  -H "X-Internal-Token: dev-token"
+
+curl http://127.0.0.1:8090/internal/agent/eval/report/{runId}?includeCases=true \
+  -H "X-Internal-Token: dev-token"
+
+curl -o eval-{runId}.csv \
+  http://127.0.0.1:8090/internal/agent/eval/report/{runId}/export.csv \
+  -H "X-Internal-Token: dev-token"
+```
+
+评测集格式（JSONL，每行一条，`#` 开头为注释）：
+
+```json
+{"id":"seed-01-1","question":"校园卡丢了怎么补办\n昨天在二食堂吃完饭发现校园卡不见了","groundTruthAnswer":"先挂失，再带身份证到行政楼103补办","groundTruthPostIds":[23,24],"groundTruthPostTitles":["一卡通丢失如何挂失","饭卡掉了求补办流程"],"excludePostId":22}
+```
+
+种子评测集由 `docs/seed/generate_rag_eval.py` 从 35 个主题簇生成：
+簇内每题做 leave-one-out，同簇另外两帖作为检索真值，该帖自身从检索中排除。
+
+## 8. 数据与分片
 
 - 一个“帖子 + 主评论 + 评论回复”为一个知识单元。
 - 没有可用评论时，使用帖子正文作为知识单元。
@@ -286,7 +383,7 @@ Milvus collection：
 software_market_rag
 ```
 
-## 8. 测试
+## 9. 测试
 
 ### 8.1 功能链路
 
@@ -319,14 +416,14 @@ cd fronted/newSSE
 pnpm type-check
 ```
 
-## 9. 当前限制
+## 10. 当前限制
 
 - 数据库中的 `post`、`pcomment`、`ccomment` 没有 `status`/`deleted` 字段，删除是物理删除。
   - Milvus 中的 `status` 第一版统一为 `ACTIVE`。
   - 删除依赖 Kafka 事件；如果事件丢失，需要执行全量回填清理残留向量。
 - 管理员软删除用户（`user.deleted=true`）不会删除其帖子，帖子仍可能被索引。
-- 第一版不做 BM25、混合检索、Cross Encoder 重排。
+- 多路召回来自「原文查询 + 改写查询」两路向量检索，不做 BM25 与 Cross Encoder 重排。
 - 第一版不做追问 AI、SSE 流式输出、MCP、多 Agent。
 - Ollama 未启动或 BGE-M3 未下载时，AI 返回 `SERVICE_UNAVAILABLE`，不再使用 Mock 向量。
-- 没有 DeepSeek Key 时只返回检索摘要，不调用大模型。
+- 没有 DeepSeek Key 时不查询改写、不运行 Judge，分析只返回检索摘要。
 - `agent-service` 通过只读 MySQL 获取帖子和评论；生产环境应使用只有 SELECT 权限的账号。
