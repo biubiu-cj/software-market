@@ -8,6 +8,8 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import software_market.entity.RefreshToken;
 
+import java.time.LocalDateTime;
+
 @Mapper
 public interface RefreshTokenMapper extends BaseMapper<RefreshToken> {
 
@@ -23,4 +25,18 @@ public interface RefreshTokenMapper extends BaseMapper<RefreshToken> {
 
     @Delete("DELETE FROM refresh_token WHERE user_id = #{userId}")
     void deleteByUserId(@Param("userId") Integer userId);
+
+    /**
+     * 删除过期记录，以及已使用且签发时间早于保留期的记录。
+     * 未使用且未过期的记录必须保留，它们仍代表活跃会话。
+     *
+     * @param usedBefore 已使用记录的保留截止时间
+     * @return 删除行数
+     */
+    @Delete("""
+            DELETE FROM refresh_token
+            WHERE expires_at < NOW()
+               OR (is_used = 1 AND created_at < #{usedBefore})
+            """)
+    int deleteExpiredOrUsedBefore(@Param("usedBefore") LocalDateTime usedBefore);
 }
