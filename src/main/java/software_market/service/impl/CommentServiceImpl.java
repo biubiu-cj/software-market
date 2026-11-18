@@ -215,10 +215,10 @@ public class CommentServiceImpl implements CommentService {
         ccomment.setTime(LocalDateTime.now());
         ccomment.setCtargetId(pcommentID);
 
+        Integer targetUserId;
         // 回复一级评论
         if (replyCcommentID == null) {
-            User targetUser = userMapper.selectById(pcomment.getUserId());
-            ccomment.setUsertargetName(targetUser.getName());
+            targetUserId = pcomment.getUserId();
         }
         // 回复二级评论
         else {
@@ -226,13 +226,24 @@ public class CommentServiceImpl implements CommentService {
             if (replyComment == null) {
                 throw new BizException("被回复评论不存在");
             }
-            User targetUser = userMapper.selectById(replyComment.getUserId());
-            ccomment.setUsertargetName(targetUser.getName());
+            targetUserId = replyComment.getUserId();
         }
+        User targetUser = userMapper.selectById(targetUserId);
+        ccomment.setUsertargetName(targetUser != null ? targetUser.getName() : "用户已注销");
+
         ccommentMapper.insert(ccomment);
         post.setCommentNum(post.getCommentNum() + 1);
         post.setHeat(post.getHeat() + 6);
         postMapper.updateById(post);
+
+        // 事务提交后通知被回复的人（自己回复自己不通知）
+        if (targetUserId != null && !userId.equals(targetUserId)) {
+            String preview = content.length() > 50 ? content.substring(0, 50) + "..." : content;
+            NotificationEvent event = new NotificationEvent(
+                    targetUserId, userId, "ccomment",
+                    "回复了你的评论: " + preview, postID);
+            kafkaProducerService.sendNotificationEvent(event);
+        }
 
         // 事务提交后重建该帖的 RAG 知识文档
         ragIndexEventPublisher.reindex(postID);

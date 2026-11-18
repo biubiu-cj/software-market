@@ -68,6 +68,10 @@ app:
   # 上传文件根目录。本地开发用相对路径（相对启动目录）；
   # 服务器上请改绝对路径并确保运行用户有写权限，例如 /opt/software-market/upload
   upload-dir: ${UPLOAD_DIR:./upload}
+  kafka:
+    # 邮件/通知 topic 副本数；单 broker 只能为 1，多 broker 环境建议设置为 3。
+    # 仅影响新建 topic，已有 topic 需要先用 kafka-topics.sh --alter 调整副本数。
+    topic-replicas: ${KAFKA_TOPIC_REPLICAS:1}
   ai:
     analysis-cache-minutes: ${AI_ANALYSIS_CACHE_MINUTES:30}
     rate-limit-per-minute: ${AI_RATE_LIMIT_PER_MINUTE:5}
