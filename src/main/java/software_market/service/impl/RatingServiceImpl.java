@@ -16,8 +16,14 @@ import software_market.mapper.RatingMapper;
 import software_market.service.RatingService;
 import software_market.vo.rating.AverageRatingVO;
 import software_market.vo.rating.GetStarsVO;
+import software_market.vo.rating.PostRatingStatsVO;
+import software_market.vo.rating.RatingSummaryVO;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -153,5 +159,59 @@ public class RatingServiceImpl extends ServiceImpl<RatingMapper, Rating> impleme
         getStarsVO.setStar4(stars[3]);
         getStarsVO.setStar5(stars[4]);
         return getStarsVO;
+    }
+
+    @Override
+    public Map<Integer, RatingSummaryVO> getRatingSummaries(Collection<Integer> postIds, Integer userId) {
+        if (postIds == null) {
+            return Map.of();
+        }
+        List<Integer> ids = postIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Integer, RatingSummaryVO> summaries = new HashMap<>();
+        for (Integer postId : ids) {
+            summaries.put(postId, RatingSummaryVO.empty());
+        }
+
+        // 一次聚合查询拿到整页帖子的平均分和星级分布
+        for (PostRatingStatsVO stats : baseMapper.selectPostRatingStats(ids)) {
+            RatingSummaryVO summary = summaries.computeIfAbsent(
+                    stats.getPostId(), key -> RatingSummaryVO.empty());
+            double average = stats.getAverageScore() == null ? 0.0 : stats.getAverageScore();
+            summary.setAverageRating(Math.round(average * 100.0) / 100.0);
+
+            GetStarsVO stars = new GetStarsVO();
+            stars.setStar1(nvl(stats.getStar1()));
+            stars.setStar2(nvl(stats.getStar2()));
+            stars.setStar3(nvl(stats.getStar3()));
+            stars.setStar4(nvl(stats.getStar4()));
+            stars.setStar5(nvl(stats.getStar5()));
+            summary.setStars(stars);
+        }
+
+        // 当前用户对整页帖子的评分，一次查询
+        if (userId != null) {
+            LambdaQueryWrapper<Rating> wrapper = Wrappers.lambdaQuery();
+            wrapper.eq(Rating::getUserId, userId)
+                    .eq(Rating::getItemType, "post")
+                    .in(Rating::getItemId, ids);
+            for (Rating rating : list(wrapper)) {
+                RatingSummaryVO summary = summaries.computeIfAbsent(
+                        rating.getItemId(), key -> RatingSummaryVO.empty());
+                summary.setUserRating(rating.getScore() == null ? 0 : rating.getScore());
+            }
+        }
+
+        return summaries;
+    }
+
+    private static int nvl(Long value) {
+        return value == null ? 0 : value.intValue();
     }
 }

@@ -40,12 +40,17 @@ import software_market.service.RatingService;
 import software_market.vo.post.*;
 import software_market.vo.rating.AverageRatingVO;
 import software_market.vo.rating.GetStarsVO;
+import software_market.vo.rating.RatingSummaryVO;
 import software_market.cache.MultiLevelCache;
 import software_market.constant.RedisKeyConstant;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -388,21 +393,30 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
 
     private List<PostVO> buildPostVOs(List<Post> posts, Integer userId) {
         List<PostVO> vos = new ArrayList<>();
+        if (posts == null || posts.isEmpty()) {
+            return vos;
+        }
+
+        // 一次性批量取作者、点赞、收藏，避免逐帖查询造成 N+1
+        List<Integer> postIds = postIdsOf(posts);
+        Map<Integer, User> users = loadUsers(posts);
+        Set<Integer> likedPostIds = loadLikedPostIds(userId, postIds);
+        Set<Integer> savedPostIds = loadSavedPostIds(userId, postIds);
+
         for (Post post : posts) {
             if (post == null || post.getPostId() == null) continue;
 
-            User user = getUser(post.getUserId());
-
-            boolean isSaved = psaveMapper.countByUserAndPost(userId, post.getPostId()) > 0;
-            boolean isLiked = plikeMapper.countByUserAndPost(userId, post.getPostId()) > 0;
+            User user = resolveUser(users, post.getUserId());
+            boolean isSaved = savedPostIds.contains(post.getPostId());
+            boolean isLiked = likedPostIds.contains(post.getPostId());
 
             PostVO vo = new PostVO();
             vo.setPostId(post.getPostId());
             vo.setUserId(post.getUserId());
-            vo.setUserName(user != null ? user.getName() : "管理员");
-            vo.setUserScore(user != null ? user.getScore() : 0);
-            vo.setUserAvatar(user != null ? user.getAvatarUrl() : "");
-            vo.setUserIdentity(user != null ? user.getIdentity() : "");
+            vo.setUserName(user.getName());
+            vo.setUserScore(user.getScore());
+            vo.setUserAvatar(user.getAvatarUrl());
+            vo.setUserIdentity(user.getIdentity());
             vo.setTitle(post.getTitle());
             vo.setContent(post.getPtext());
             vo.setLike(post.getLikeNum());
@@ -441,18 +455,23 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
 
     private List<ReviewVO> buildReviewVOs(List<Post> posts, Integer userId) {
         List<ReviewVO> vos = new ArrayList<>();
+        if (posts == null || posts.isEmpty()) {
+            return vos;
+        }
+
+        // 一次性批量取作者、点赞、评分，避免逐帖查询造成 N+1
+        List<Integer> postIds = postIdsOf(posts);
+        Map<Integer, User> users = loadUsers(posts);
+        Set<Integer> likedPostIds = loadLikedPostIds(userId, postIds);
+        Map<Integer, RatingSummaryVO> ratings = ratingService.getRatingSummaries(postIds, userId);
+
         for (Post post : posts) {
             if (post == null || post.getPostId() == null) continue;
 
-            User user = getUser(post.getUserId());
-            boolean isLiked = plikeMapper.countByUserAndPost(userId, post.getPostId()) > 0;
-
-            // 查询评分统计
-            RatingDTO ratingDTO = new RatingDTO();
-            ratingDTO.setPostID(post.getPostId());
-            AverageRatingVO avgVO = ratingService.getAverageRating(ratingDTO);
-            GetStarsVO starsVO = ratingService.getStars(ratingDTO);
-            int userRating = ratingService.userPostRating(ratingDTO);
+            User user = resolveUser(users, post.getUserId());
+            boolean isLiked = likedPostIds.contains(post.getPostId());
+            RatingSummaryVO rating = ratings.getOrDefault(post.getPostId(), RatingSummaryVO.empty());
+            GetStarsVO starsVO = rating.getStars();
             int[] stars = new int[]{
                 starsVO.getStar1(), starsVO.getStar2(), starsVO.getStar3(),
                 starsVO.getStar4(), starsVO.getStar5()
@@ -461,10 +480,10 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
             ReviewVO vo = new ReviewVO();
             vo.setPostId(post.getPostId());
             vo.setUserId(post.getUserId());
-            vo.setUserName(user != null ? user.getName() : "管理员");
-            vo.setUserScore(user != null ? user.getScore() : 0);
-            vo.setUserAvatar(user != null ? user.getAvatarUrl() : "");
-            vo.setUserIdentity(user != null ? user.getIdentity() : "");
+            vo.setUserName(user.getName());
+            vo.setUserScore(user.getScore());
+            vo.setUserAvatar(user.getAvatarUrl());
+            vo.setUserIdentity(user.getIdentity());
             vo.setTitle(post.getTitle());
             vo.setContent(post.getPtext());
             vo.setLike(post.getLikeNum());
@@ -476,9 +495,9 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
             vo.setLiked(isLiked);
             vo.setPhotos(post.getPhotos());
             vo.setTag(post.getTag());
-            vo.setRating(avgVO.getAverageRating());
+            vo.setRating(rating.getAverageRating());
             vo.setStars(stars);
-            vo.setUserRating(userRating);
+            vo.setUserRating(rating.getUserRating());
             vos.add(vo);
         }
         return vos;
@@ -691,25 +710,94 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         }).toList();
     }
 
-    private User getUser(Integer userId) {
+    /**
+     * 一次批量查出整页帖子的作者，再按 userId 从 L1/L2 缓存读取或回填。
+     * 这样冷启动时不会再对每条帖子单独查一次 user 表。
+     */
+    private Map<Integer, User> loadUsers(List<Post> posts) {
+        Set<Integer> userIds = posts.stream()
+                .filter(Objects::nonNull)
+                .map(Post::getUserId)
+                .filter(userId -> userId != null && userId != 0)
+                .collect(Collectors.toSet());
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Integer, User> dbUsers = userMapper.selectBatchIds(userIds).stream()
+                .collect(Collectors.toMap(User::getUserId, user -> user));
+
+        Map<Integer, User> users = new HashMap<>();
+        for (Integer userId : userIds) {
+            User user = cache.get(USER_CACHE_KEY + userId, User.class, USER_L2_TTL,
+                    () -> dbUsers.get(userId));
+            if (user != null) {
+                users.put(userId, user);
+            }
+        }
+        return users;
+    }
+
+    private User resolveUser(Map<Integer, User> users, Integer userId) {
         if (userId == null || userId == 0) {
-            User admin = new User();
-            admin.setName("管理员");
-            admin.setScore(0);
-            admin.setAvatarUrl("");
-            admin.setIdentity("official");
-            return admin;
+            return adminUser();
         }
-        User user = cache.get(USER_CACHE_KEY + userId, User.class, USER_L2_TTL,
-                () -> userMapper.selectById(userId));
-        if (user == null) {
-            User deletedUser = new User();
-            deletedUser.setName("用户已注销");
-            deletedUser.setScore(0);
-            deletedUser.setAvatarUrl("");
-            deletedUser.setIdentity("");
-            return deletedUser;
+        User user = users.get(userId);
+        return user != null ? user : deletedUser();
+    }
+
+    private Set<Integer> loadLikedPostIds(Integer userId, List<Integer> postIds) {
+        if (userId == null || postIds.isEmpty()) {
+            return Set.of();
         }
-        return user;
+        return plikeMapper.selectList(Wrappers.<Plike>lambdaQuery()
+                        .select(Plike::getPtargetId)
+                        .eq(Plike::getUserId, userId)
+                        .in(Plike::getPtargetId, postIds))
+                .stream()
+                .map(Plike::getPtargetId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    private Set<Integer> loadSavedPostIds(Integer userId, List<Integer> postIds) {
+        if (userId == null || postIds.isEmpty()) {
+            return Set.of();
+        }
+        return psaveMapper.selectList(Wrappers.<Psave>lambdaQuery()
+                        .select(Psave::getPtargetId)
+                        .eq(Psave::getUserId, userId)
+                        .in(Psave::getPtargetId, postIds))
+                .stream()
+                .map(Psave::getPtargetId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    private List<Integer> postIdsOf(List<Post> posts) {
+        return posts.stream()
+                .filter(Objects::nonNull)
+                .map(Post::getPostId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+    }
+
+    private User adminUser() {
+        User admin = new User();
+        admin.setName("管理员");
+        admin.setScore(0);
+        admin.setAvatarUrl("");
+        admin.setIdentity("official");
+        return admin;
+    }
+
+    private User deletedUser() {
+        User deletedUser = new User();
+        deletedUser.setName("用户已注销");
+        deletedUser.setScore(0);
+        deletedUser.setAvatarUrl("");
+        deletedUser.setIdentity("");
+        return deletedUser;
     }
 }
