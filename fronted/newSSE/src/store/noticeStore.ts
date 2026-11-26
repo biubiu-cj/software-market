@@ -8,15 +8,25 @@ const noticeNum = reactive<NoticeNum>({
   readTotalNum: 0,
 })
 
-async function refreshNoticeNum() {
-  try {
-    const data = await getNoticesNum()
-    Object.assign(noticeNum, data)
+// 同一时刻只发一个请求：WS 推送和页面挂载可能同时触发刷新
+let refreshPromise: Promise<void> | null = null
+
+function refreshNoticeNum(): Promise<void> {
+  if (refreshPromise) {
+    return refreshPromise
   }
-  catch (error) {
-    console.error('Error refreshing notice number:', error)
-    throw error
-  }
+  refreshPromise = getNoticesNum()
+    .then((data) => {
+      Object.assign(noticeNum, data)
+    })
+    .catch((error) => {
+      console.error('Error refreshing notice number:', error)
+      throw error
+    })
+    .finally(() => {
+      refreshPromise = null
+    })
+  return refreshPromise
 }
 
 export function useNoticeStore() {

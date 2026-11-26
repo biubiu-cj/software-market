@@ -15,6 +15,7 @@ import software_market.event.EmailEvent;
 import software_market.event.NotificationEvent;
 import software_market.mapper.NoticeMapper;
 import software_market.service.MailService;
+import software_market.webSocket.NoticePushService;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -36,8 +37,9 @@ class KafkaProducerServiceTest {
     private final KafkaTemplate<String, Object> kafkaTemplate = mock(KafkaTemplate.class);
     private final MailService mailService = mock(MailService.class);
     private final NoticeMapper noticeMapper = mock(NoticeMapper.class);
+    private final NoticePushService noticePushService = mock(NoticePushService.class);
     private final KafkaProducerService service =
-            new KafkaProducerService(kafkaTemplate, mailService, noticeMapper);
+            new KafkaProducerService(kafkaTemplate, mailService, noticeMapper, noticePushService);
 
     @BeforeEach
     void clearSynchronization() {
@@ -118,6 +120,7 @@ class KafkaProducerServiceTest {
         assertEquals("pcomment", notice.getType());
         assertEquals("评论了你的帖子", notice.getNtext());
         assertEquals(99, notice.getTarget());
+        verify(noticePushService, timeout(1000)).pushNewNotice(eq(2), any());
     }
 
     @SuppressWarnings("unchecked")

@@ -13,6 +13,7 @@ import software_market.event.EmailEvent;
 import software_market.event.NotificationEvent;
 import software_market.mapper.NoticeMapper;
 import software_market.service.MailService;
+import software_market.webSocket.NoticePushService;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -35,6 +36,7 @@ public class KafkaProducerService {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final MailService mailService;
     private final NoticeMapper noticeMapper;
+    private final NoticePushService noticePushService;
 
     /** 降级发信/写库是阻塞 IO, 放在独立线程, 避免卡住 Kafka 生产者的 IO 线程 */
     private final ExecutorService fallbackExecutor = Executors.newSingleThreadExecutor(r -> {
@@ -124,6 +126,8 @@ public class KafkaProducerService {
             notice.setIsRead(false);
             notice.setTarget(event.getTarget());
             noticeMapper.insert(notice);
+            // Kafka 不可用时也保证实时推送，避免降级路径只能等页面刷新
+            noticePushService.pushNewNotice(event.getReceiver(), notice.getNoticeId());
             log.info("通知降级写库成功: type={}, receiver={}, eventId={}",
                     event.getType(), event.getReceiver(), event.getEventId());
         } catch (Exception e) {

@@ -12,6 +12,7 @@ import software_market.event.EmailEvent;
 import software_market.event.NotificationEvent;
 import software_market.mapper.NoticeMapper;
 import software_market.service.MailService;
+import software_market.webSocket.NoticePushService;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -33,6 +34,7 @@ public class KafkaConsumerService {
     private final MailService mailService;
     private final NoticeMapper noticeMapper;
     private final StringRedisTemplate redis;
+    private final NoticePushService noticePushService;
 
     @KafkaListener(topics = KafkaTopicConfig.TOPIC_EMAIL_VERIFICATION, groupId = "email-group",
             properties = {"auto.offset.reset=latest"})
@@ -76,6 +78,9 @@ public class KafkaConsumerService {
             notice.setIsRead(false);
             notice.setTarget(event.getTarget());
             noticeMapper.insert(notice);
+
+            // 通知已落库，推送只是加速可见；失败由 NoticePushService 内部吞掉，不触发重试
+            noticePushService.pushNewNotice(event.getReceiver(), notice.getNoticeId());
 
             markDone(dedupKey);
         } catch (Exception e) {

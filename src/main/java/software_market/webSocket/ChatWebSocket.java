@@ -165,7 +165,15 @@ public class ChatWebSocket {
         return response.toString();
     }
 
-    private void sendToUser(Integer userId, String json) {
+    /**
+     * 向指定用户的所有在线连接推送一条消息。
+     * 离线或发送失败时静默忽略：消息对应的数据已在数据库，前端下次拉取即可。
+     */
+    public static void pushToUser(Integer userId, String json) {
+        sendToUser(userId, json);
+    }
+
+    private static void sendToUser(Integer userId, String json) {
         Set<Session> sessions = SESSION_MAP.get(userId);
         if (sessions == null || sessions.isEmpty()) {
             log.warn("用户{}不在线，消息未送达。当前在线用户: {}", userId, SESSION_MAP.keySet());
@@ -175,7 +183,11 @@ public class ChatWebSocket {
         for (Session s : sessions) {
             if (s.isOpen()) {
                 try {
-                    s.getBasicRemote().sendText(json);
+                    // RemoteEndpoint.Basic 不允许同一 session 并发发送，
+                    // 聊天消息和通知推送可能来自不同线程，这里按 session 串行化。
+                    synchronized (s) {
+                        s.getBasicRemote().sendText(json);
+                    }
                     log.info("消息已发送至用户{}的session", userId);
                 } catch (Exception e) {
                     log.error("向用户{}发送消息失败", userId, e);
@@ -190,7 +202,9 @@ public class ChatWebSocket {
             for (Session s : sessions) {
                 if (s != except && s.isOpen()) {
                     try {
-                        s.getBasicRemote().sendText(json);
+                        synchronized (s) {
+                            s.getBasicRemote().sendText(json);
+                        }
                     } catch (Exception e) {
                         log.error("向用户{}同步消息失败", userId, e);
                     }

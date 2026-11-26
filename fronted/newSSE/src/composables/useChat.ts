@@ -33,6 +33,10 @@ interface ChatEventMap {
   }
   NewMessage: ChatMessageItem
   MessageAck: { code: number, msg: string }
+  // 通知实时推送：只是“有新通知”的信号，通知内容仍然从 REST 接口拉取
+  NewNotice: { event: 'NewNotice', noticeID: number }
+  // WebSocket 连接建立/重连成功，用于补拉断线期间错过的状态
+  Open: { event: 'Open' }
 }
 
 // 客户端发送的信息
@@ -56,6 +60,10 @@ function isNewMessage(event: any): event is ChatEventMap['NewMessage'] {
 
 function isMessageAck(event: any): event is ChatEventMap['MessageAck'] {
   return 'code' in event && 'msg' in event
+}
+
+function isNewNotice(event: any): event is ChatEventMap['NewNotice'] {
+  return event?.event === 'NewNotice'
 }
 
 // 单例模式
@@ -165,6 +173,11 @@ export function useChat() {
     }
 
     const handleSocketMessage = <K extends keyof ChatEventMap>(data: ChatEventMap[K]) => {
+      if (isNewNotice(data)) {
+        emit('NewNotice', data)
+        return
+      }
+
       if (isNewMessage(data)) {
         console.log('[useChat] isNewMessage=true, targetUserID=', data.targetUserID, 'myUserID=', userInfo.userID, 'senderUserID=', data.senderUserID, 'currentUserID=', current.userID)
         if (data.targetUserID !== userInfo.userID) {
@@ -237,6 +250,11 @@ export function useChat() {
     listenWebSocket('Message', (data) => {
       console.log('[useChat] 收到WebSocket消息:', JSON.stringify(data))
       handleSocketMessage(data)
+    })
+
+    // 首次连接和每次重连成功都会触发，消费者据此补拉漏掉的通知
+    listenWebSocket('Open', () => {
+      emit('Open', { event: 'Open' })
     })
 
     const addContact = (contact: RelevantUser) => {

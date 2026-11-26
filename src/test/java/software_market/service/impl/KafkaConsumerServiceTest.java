@@ -10,6 +10,7 @@ import software_market.event.EmailEvent;
 import software_market.event.NotificationEvent;
 import software_market.mapper.NoticeMapper;
 import software_market.service.MailService;
+import software_market.webSocket.NoticePushService;
 
 import java.time.Duration;
 
@@ -30,10 +31,11 @@ class KafkaConsumerServiceTest {
     private final MailService mailService = mock(MailService.class);
     private final NoticeMapper noticeMapper = mock(NoticeMapper.class);
     private final StringRedisTemplate redis = mock(StringRedisTemplate.class);
+    private final NoticePushService noticePushService = mock(NoticePushService.class);
     @SuppressWarnings("unchecked")
     private final ValueOperations<String, String> valueOps = mock(ValueOperations.class);
     private final KafkaConsumerService service =
-            new KafkaConsumerService(mailService, noticeMapper, redis);
+            new KafkaConsumerService(mailService, noticeMapper, redis, noticePushService);
 
     @BeforeEach
     void setUp() {
@@ -119,6 +121,7 @@ class KafkaConsumerServiceTest {
         verify(noticeMapper).insert(captor.capture());
         assertEquals(2, captor.getValue().getReceiver());
         assertEquals("ccomment", captor.getValue().getType());
+        verify(noticePushService).pushNewNotice(eq(2), any());
         verify(valueOps).set(key, "DONE", Duration.ofDays(7));
     }
 

@@ -36,7 +36,7 @@ const router = useRouter()
 const { noticeNum, refreshNoticeNum } = useNoticeStore()
 const { startPolling, stopPolling, newPostsNotification, hideNotification } = useNewPostsStore()
 
-const { connect, disconnect, chatNum, updateChatNum } = useChat()
+const { connect, disconnect, chatNum, updateChatNum, on: onChatEvent, off: offChatEvent } = useChat()
 const { desktopExperienceEnabled } = usePWA()
 
 const windowWidth = ref(window.innerWidth)
@@ -46,6 +46,17 @@ const isPC = computed(() => {
 provide('isPC', isPC)
 
 const isDesktopExperience = computed(() => isPC.value && desktopExperienceEnabled.value)
+
+// 收到新通知信号或 WebSocket 重连成功时，重新拉取未读数。
+// 通知内容不在推送里，数据库才是事实来源。
+async function handleRealtimeNotice() {
+  try {
+    await refreshNoticeNum()
+  }
+  catch {
+    // getNoticesNum 内部已经提示过失败，这里只避免未处理的 rejection
+  }
+}
 
 // PWA/电脑端菜单状态管理
 const pwaMenuOpen = ref(true)
@@ -119,6 +130,8 @@ watch(() => route.path, (newPath) => {
 }, { immediate: true })
 
 onMounted(() => {
+  onChatEvent('NewNotice', handleRealtimeNotice)
+  onChatEvent('Open', handleRealtimeNotice)
   connect()
   refreshNoticeNum()
   updateChatNum()
@@ -143,6 +156,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  offChatEvent('NewNotice', handleRealtimeNotice)
+  offChatEvent('Open', handleRealtimeNotice)
   window.removeEventListener('resize', updateWidth)
 
   if (!isPC.value) {

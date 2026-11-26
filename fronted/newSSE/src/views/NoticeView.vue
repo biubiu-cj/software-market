@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import type { Notice } from '@/api/notice/notice'
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 
 import { useRouter } from 'vue-router'
 import { getNotices, readNotice } from '@/api/notice/notice'
 
 import { showMsg } from '@/components/MessageBox'
+import { useChat } from '@/composables/useChat'
 import { useNoticeStore } from '@/store/noticeStore'
 import { strHandler } from '@/utils/strHandler'
 
 const router = useRouter()
 const { noticeNum, refreshNoticeNum } = useNoticeStore()
+const { on: onChatEvent, off: offChatEvent } = useChat()
 
 const readPage = ref(true)
 const noticesRead = ref<Notice[]>([])
@@ -69,12 +71,21 @@ async function getNoticesFunc() {
   }
 }
 
-onMounted(async () => {
-  // 处理在通知页面刷新/直接打开通知页面的情况
-  if (!noticeNum.readTotalNum || !noticeNum.unreadTotalNum) {
-    await refreshNoticeNum()
-  }
+// 通知页打开时收到实时信号：先刷新计数（getNoticesFunc 依赖计数作为 pageSize），再拉列表
+async function handleRealtimeNotice() {
+  await refreshNoticeNum()
   await getNoticesFunc()
+}
+
+onMounted(async () => {
+  onChatEvent('NewNotice', handleRealtimeNotice)
+  // 每次进入通知页都刷新计数，避免使用过期的 pageSize 漏掉新通知
+  await refreshNoticeNum()
+  await getNoticesFunc()
+})
+
+onUnmounted(() => {
+  offChatEvent('NewNotice', handleRealtimeNotice)
 })
 </script>
 
